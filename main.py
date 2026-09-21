@@ -26,7 +26,8 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
-DATA_COLLECTION = "data"
+# 시드 데이터가 들어있는 컬렉션 이름으로 통일
+DATA_COLLECTION = "execution_logs"
 CONV_COLLECTION = "conversations"
 
 # 3. 코디세이 프록시 연동 OpenAI 클라이언트
@@ -93,14 +94,6 @@ def get_all_data():
             item = doc.to_dict()
             item["id"] = doc.id
             results.append(item)
-        
-        if not results:
-            docs = db.collection("execution_logs").order_by("date").stream()
-            for doc in docs:
-                item = doc.to_dict()
-                item["id"] = doc.id
-                results.append(item)
-                
         return {"total": len(results), "data": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -121,7 +114,6 @@ def create_data(log: ExecutionLogCreate):
 
 # ==========================================
 # 2. 데이터 통계 및 요약 API (/api/data/summary)
-# (※ 중요: /api/data/{id}보다 위에 위치)
 # ==========================================
 
 @app.get("/api/data/summary")
@@ -130,9 +122,6 @@ def get_data_summary():
     try:
         docs = db.collection(DATA_COLLECTION).order_by("date").stream()
         records = [doc.to_dict() for doc in docs]
-        if not records:
-            docs = db.collection("execution_logs").order_by("date").stream()
-            records = [doc.to_dict() for doc in docs]
 
         if not records:
             return {"message": "데이터가 충분하지 않습니다.", "total_count": 0}
@@ -186,8 +175,6 @@ def get_data_summary():
 def get_data_by_id(id: str):
     doc = db.collection(DATA_COLLECTION).document(id).get()
     if not doc.exists:
-        doc = db.collection("execution_logs").document(id).get()
-    if not doc.exists:
         raise HTTPException(status_code=404, detail=f"No data found for ID {id}")
     data = doc.to_dict()
     data["id"] = doc.id
@@ -200,10 +187,7 @@ def update_data(id: str, update_req: ExecutionLogUpdate):
         doc_ref = db.collection(DATA_COLLECTION).document(id)
         doc = doc_ref.get()
         if not doc.exists:
-            doc_ref = db.collection("execution_logs").document(id)
-            doc = doc_ref.get()
-            if not doc.exists:
-                raise HTTPException(status_code=404, detail=f"No data found for ID {id}")
+            raise HTTPException(status_code=404, detail=f"No data found for ID {id}")
 
         update_fields = {k: v for k, v in update_req.model_dump().items() if v is not None}
         if not update_fields:
@@ -224,9 +208,7 @@ def delete_data(id: str):
     try:
         doc_ref = db.collection(DATA_COLLECTION).document(id)
         if not doc_ref.get().exists:
-            doc_ref = db.collection("execution_logs").document(id)
-            if not doc_ref.get().exists:
-                raise HTTPException(status_code=404, detail=f"No data found for ID {id}")
+            raise HTTPException(status_code=404, detail=f"No data found for ID {id}")
 
         doc_ref.delete()
         return {"message": f"Data with ID {id} deleted successfully"}
@@ -255,9 +237,6 @@ def chat_with_coach(request: ChatRequest):
 
         docs = db.collection(DATA_COLLECTION).order_by("date", direction=firestore.Query.DESCENDING).limit(7).stream()
         recent_logs = [doc.to_dict() for doc in docs]
-        if not recent_logs:
-            docs = db.collection("execution_logs").order_by("date", direction=firestore.Query.DESCENDING).limit(7).stream()
-            recent_logs = [doc.to_dict() for doc in docs]
         recent_logs.reverse()
 
         logs_text = "\n".join([f"- {item['date']}: {item['value']}점 ({item['memo']})" for item in recent_logs])
