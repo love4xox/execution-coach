@@ -375,7 +375,7 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 
 ---
 
-## 📸 10. 핵심 스크린샷 증빙 자료 (전체 렌더링 갤러리)
+## 📸 10. 핵심 스크린샷 증빙 자료
 
 ### 1) [데이터 관리 화면] 시계열 CRUD 테이블 및 상단 점수/메모 등록 폼 (항목 1 증빙)
 ![데이터 관리 테이블](images/screenshot_crud_table.png)
