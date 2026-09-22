@@ -15,7 +15,7 @@
   * **해결 방안**:
     1. 매일의 실행 점수(0~100점)와 회고 메모를 시계열로 기록 및 관리(CRUD)합니다.
     2. 100일 이상의 누적 데이터를 Pandas로 실시간 가공하여 이동 평균(7일/30일) 및 실행 추세를 진단합니다.
-    3. AI 실행 코치가 사용자의 정량적 통계 지표를 근거로 직설적인 피드백과 오늘 즉시 실행 가능한 **'15분 단위 초소형 액션 플랜'**을 제시합니다.
+    3. AI 실행 코치가 사용자의 정량적 통계 지표를 근거로 직설적인 피드백과 오늘 즉시 실행 가능한 **15분 단위 초소형 액션 플랜**을 제시합니다.
     4. 지능형 Function Calling을 통해 질문 의도에 따라 AI가 내부 통계 도구를 능동적으로 호출합니다.
 
 ---
@@ -85,7 +85,7 @@
 | `OPENAI_API_KEY` | OpenAI API 인증 키 | `sk-...` |
 | `OPENAI_BASE_URL` | OpenAI API 베이스 URL (프록시 사용 시) | `https://api.openai.com/v1` |
 | `OPENAI_MODEL` | 사용할 LLM 모델 식별자 | `gpt-5.4-mini` |
-| `CORS_ORIGINS` | CORS 허용 오리진 리스트 | `*` 또는 `https://<도메인>.vercel.app` |
+| `CORS_ORIGINS` | CORS 허용 오리진 리스트 | `*` 또는 `https://execution-coach-25e5lk54b-mind-mate1.vercel.app` |
 | `PORT` | 백엔드 서버 구동 포트 | `10000` (Render 기본값) |
 
 ### 4.2 로컬 설치 및 Uvicorn 실행 명령어 코드
@@ -175,7 +175,7 @@ class DataSummaryResponse(BaseModel):
 # 4. AI 코칭 질의 검증 스키마
 class ChatRequest(BaseModel):
     user_query: str = Field(
-        default="최근 내 실행 상태를 바탕으로 오늘 집중해야 할 한 가지 피드백을줘.",
+        default="최근 내 실행 상태를 바탕으로 오늘 집중해야 할 한 가지 피드백을 줘.",
         description="사용자 질문 또는 고민"
     )
     conversation_id: Optional[str] = Field(None, description="기존 대화 세션 ID (없으면 자동 생성)")
@@ -368,7 +368,7 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 
 ### [항목 4] 운영 고려사항 및 방어적 설계
 * **첫 접속 지연(콜드스타트)이 발생했을 때 사용자가 납득할 수 있도록 어떻게 안내/완화했는지 설명할 수 있는가?**: Render 무료 웹 서비스의 유휴 인스턴스 슬립(Sleep) 특성상 발생하는 초기 30~50초의 응답 지연에 대응하기 위해, 프론트엔드 첫 접속 시 상단에 로딩 스피너와 함께 *"⚡ 서버와 연결 중입니다. 무료 인스턴스 슬립 해제로 인해 첫 접속 시 약 30~50초 소요될 수 있습니다..."* 배너를 표출하도록 구현했습니다. 사용자가 시스템 먹통이 아닌 정상적인 기동 대기 과정임을 명확히 인지하게 하여 이탈을 완화했습니다.
-* **CORS가 왜 발생했고, 어떤 설정으로 해결했는지(허용 오리진/배포 도메인 관점) 설명할 수 있는가?**: 프론트엔드 배포 출처(`https://<도메인>.vercel.app`)와 백엔드 API 출처(`https://execution-coach.onrender.com`)의 도메인(오리진)이 서로 달라, 브라우저의 동일 출처 정책(SOP)에 의해 API 호출이 차단되는 CORS 오류가 발생했습니다. 이를 해결하기 위해 백엔드에 FastAPI `CORSMiddleware`를 등록하고 환경 변수 `CORS_ORIGINS`에 프론트엔드 도메인을 지정하여 브라우저의 사전 요청(Preflight OPTIONS)을 정상 승인하도록 구성했습니다.
+* **CORS가 왜 발생했고, 어떤 설정으로 해결했는지(허용 오리진/배포 도메인 관점) 설명할 수 있는가?**: 프론트엔드 배포 출처(`https://execution-coach-25e5lk54b-mind-mate1.vercel.app`)와 백엔드 API 출처(`https://execution-coach.onrender.com`)의 도메인(오리진)이 서로 달라, 브라우저의 동일 출처 정책(SOP)에 의해 API 호출이 차단되는 CORS 오류가 발생했습니다. 이를 해결하기 위해 백엔드에 FastAPI `CORSMiddleware`를 등록하고 환경 변수 `CORS_ORIGINS`에 프론트엔드 도메인을 지정하여 브라우저의 사전 요청(Preflight OPTIONS)을 정상 승인하도록 구성했습니다.
 * **사용자 입력을 그대로 저장/전달할 때의 위험(예: 악성 입력, 데이터 오염)과 최소 대응(검증/룰/필터)을 설명할 수 있는가?**: 비정상적인 점수(음수, 100점 초과 등) 유입으로 인한 시계열 통계 왜곡, 악성 자바스크립트가 삽입되는 저장형 XSS 공격, 악의적 지시문으로 AI 응답을 조작하는 프롬프트 인젝션 위험이 존재합니다.
   * **대응책**: Pydantic `Field(ge=0, le=100)`와 문자열 길이 제한(`max_length=500`)으로 비즈니스 룰을 사전 검증했습니다. 프론트엔드 화면 출력 시 `innerHTML` 대신 `textContent`를 사용하여 스크립트 실행을 원천 차단하고, 프롬프트 구성 시 시스템 롤과 사용자 롤을 명확히 분리하여 프롬프트 탈옥을 방어했습니다.
 * **데이터가 늘어나거나 요약 기준이 바뀌면(예: 최근 30일만 반영) 어디를 어떻게 수정할지 설명할 수 있는가?**: 분석 로직이 모듈화되어 있어 `main.py`의 `get_data_summary()` 함수 내부만 수정하면 됩니다. 전체 컬렉션을 스캔하는 대신 Firestore 쿼리에 `.limit(30)`을 추가하거나 Pandas DataFrame 가공 시 `df.tail(30)`으로 슬라이싱 범위를 변경하면, 프론트엔드 대시보드 카드, 차트, AI 코칭 프롬프트, Function Calling에 수정된 기준이 일괄 반영됩니다.
@@ -417,13 +417,13 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 ![Render 정상 배포 이력](images/screenshot_render_deploy_history.png)
 
 ### 14) [트러블슈팅] Windows PowerShell 앱 실행 별칭 간섭 오류 화면
-![파이썬 윈도우 별칭 오류](images/screenshot_troubleshooting_python_alias.png)
+![파이썬 윈도우 별칭 오류](images/screenshot_troubleshooting_python_alias_error.png)
 
 ### 15) [트러블슈팅] 전역 환경 실행 시 firebase_admin 패키지 누락 오류 화면
-![firebase-admin 모듈 누락 오류](images/screenshot_troubleshooting_modulenotfound.png)
+![firebase-admin 모듈 누락 오류](images/screenshot_troubleshooting_modulenotfound_firebase.png)
 
 ### 16) [환경 복구 및 적재] 의존성 설치 후 100건 시계열 데이터 재적재 성공 화면
-![패키지 설치 및 시드 재업로드 성공](images/screenshot_firebase_admin_seed_upload.png)
+![패키지 설치 및 시드 재업로드 성공](images/screenshot_firebase_admin_install_and_seed_upload.png)
 
 ### 17) [트러블슈팅] 컬렉션 불일치로 인한 단 1건 데이터 노출 문제 증빙
 ![컬렉션 불일치 단건 노출 증상](images/screenshot_api_data_single_item_before_fix.png)
