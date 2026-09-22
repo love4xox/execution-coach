@@ -335,7 +335,7 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 
 ---
 
-## 📑 9. 평가 기준 항목별 심층 분석 (항목 1~4 심사 통과 대응)
+## 📑 9. 평가 기준 항목별 심층 분석
 
 ### [항목 1] 기능 동작 및 사용성
 * **배포된 웹 서비스 URL로 정상 접속이 가능한가?**: 프론트엔드는 Vercel, 백엔드는 Render에 각각 분리 배포되어 정상 가동 중입니다. 브라우저를 통해 Vercel 배포 URL에 접속하면 메인 대시보드 화면이 오류 없이 렌더링되며, 백엔드 API와의 비동기 통신이 정상적으로 연결됩니다.
