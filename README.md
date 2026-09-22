@@ -411,7 +411,7 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 ![네트워크 탭 200 OK 연동 검증](images/screenshot_network_tab_200ok.png)
 
 ### 12) [트러블슈팅] Render 포트 스캔 타임아웃 오류 발생 로그
-![Render 포트 타임아웃 오류](images/screenshot_troubleshooting_port_timeout.png)
+![Render 포트 타임아웃 오류](images/screenshot_troubleshooting_render_timeout.png)
 
 ### 13) [Render 배포 이력] DATA_COLLECTION 패치 커밋 정상 배포 완료 내역
 ![Render 정상 배포 이력](images/screenshot_render_deploy_history.png)
