@@ -24,6 +24,42 @@
     .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
     
+    /* 모바일 반응형 처리 */
+    @media (max-width: 768px) {
+      body { padding: 12px; }
+      .container { grid-template-columns: 1fr; gap: 16px; }
+      .data-form { grid-template-columns: 1fr 1fr !important; }
+      .data-form input[type="text"] { grid-column: 1 / -1; }
+      .data-form button { grid-column: 1 / -1; }
+    }
+
+    /* 서버 콜드스타트 로딩 배너 스타일 */
+    .loading-banner {
+      background-color: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid var(--primary);
+      padding: 14px 18px;
+      border-radius: 8px;
+      color: #1e40af;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #bfdbfe;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
     .summary-item { background: var(--bg); padding: 14px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
     .summary-item .label { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 4px; }
@@ -65,6 +101,12 @@
 <body>
 
 <div class="container">
+  <!-- 0. 서버 콜드스타트 안내 배너 -->
+  <div id="loadingBanner" class="full-width loading-banner" style="display: none;">
+    <div class="spinner"></div>
+    <span>서버와 연결 중입니다. 무료 인스턴스 슬립 해제로 인해 첫 접속 시 약 30~50초 소요될 수 있습니다...</span>
+  </div>
+
   <!-- 1. 요약 통계 박스 -->
   <section class="card full-width">
     <h2>
@@ -132,16 +174,28 @@
 </div>
 
 <script>
-  // Render 백엔드 배포 주소 연동
   const API_BASE = "https://execution-coach.onrender.com/api";
   let currentConversationId = null;
   let cachedDataList = [];
 
-  window.addEventListener("DOMContentLoaded", () => {
+  // 초기 로딩: 데이터 3종을 병렬로 가져오며 콜드스타트 배너 제어
+  window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("input-date").value = new Date().toISOString().slice(0, 10);
-    fetchSummary();
-    fetchDataList();
-    fetchConversations();
+    
+    const banner = document.getElementById("loadingBanner");
+    if (banner) banner.style.display = "flex"; // 로딩 시작 시 표시
+
+    try {
+      await Promise.all([
+        fetchSummary(),
+        fetchDataList(),
+        fetchConversations()
+      ]);
+    } catch (e) {
+      console.error("초기 데이터 로딩 에러:", e);
+    } finally {
+      if (banner) banner.style.display = "none"; // 완료 시 숨김
+    }
   });
 
   async function fetchSummary() {
@@ -250,7 +304,6 @@
     }
   }
 
-  // **마크다운 볼드 문법을 <b> 태그로 치환**
   function formatMarkdown(text) {
     if (!text) return "";
     let escaped = text
