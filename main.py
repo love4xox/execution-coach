@@ -1,4 +1,5 @@
 # deploy-trigger
+import json
 import os
 import uuid
 from datetime import datetime
@@ -299,6 +300,87 @@ def chat_with_coach(request: ChatRequest):
             "query": request.user_query,
             "response": ai_reply,
             "coaching_feedback": ai_reply
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================
+# 4-1. 보너스 과제 1: AI 도구 호출 (Function Calling)
+# ==========================================
+
+# 1. 도구 정의 (Function Calling 스키마)
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_data_summary",
+            "description": "사용자의 시계열 실행 점수 전체 통계(평균, 최근 7일 평균, 최근 추세 등)를 실시간으로 조회합니다.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    }
+]
+
+@app.post("/api/chat/function-call")
+def chat_with_function_calling(req: ChatRequest):
+    """
+    보너스 과제 1: OpenAI Tool / Function Calling 기반 지능형 코칭 엔드포인트
+    """
+    try:
+        messages = [
+            {
+                "role": "system", 
+                "content": "당신은 전문 실행 코치입니다. 사용자의 실행 상태나 통계에 대한 질문을 받으면 반드시 get_data_summary 도구를 호출하여 팩트 기반으로 분석해 주세요."
+            },
+            {"role": "user", "content": req.user_query}
+        ]
+
+        # 1차 호출: LLM에게 도구 목록 제공
+        response = openai_client.chat.completions.create(
+            model=OPENAI_MODEL_NAME,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto"
+        )
+        
+        response_message = response.choices[0].message
+        tool_calls = response_message.tool_calls
+
+        tool_used = None
+        # 모델이 도구 호출을 결정한 경우
+        if tool_calls:
+            tool_used = tool_calls[0].function.name
+            messages.append(response_message)  # LLM의 도구 호출 메시지 추가
+            
+            # 내부 함수(통계 요약) 실행
+            if tool_used == "get_data_summary":
+                summary_data = get_data_summary()
+                
+                # 도구 실행 결과를 다시 대화에 주입
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_calls[0].id,
+                    "name": "get_data_summary",
+                    "content": json.dumps(summary_data, ensure_ascii=False)
+                })
+                
+                # 2차 호출: 도구 결과를 바탕으로 최종 답변 생성
+                second_response = openai_client.chat.completions.create(
+                    model=OPENAI_MODEL_NAME,
+                    messages=messages
+                )
+                final_reply = second_response.choices[0].message.content
+        else:
+            final_reply = response_message.content
+
+        return {
+            "user_query": req.user_query,
+            "tool_called": tool_used,
+            "coaching_feedback": final_reply
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
