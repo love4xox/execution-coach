@@ -20,15 +20,33 @@
 
 ---
 
-## 📅 2. 프로젝트 개발 진행표 (Timeline & Milestones)
+## 📅 2. 프로젝트 개발 진행 타임라인
 
-| 단계 (Phase) | 기간 | 주요 작업 내용 및 달성 목표 | 결과 산출물 | 상태 |
-| :--- | :--- | :--- | :--- | :---: |
-| **Phase 1: 기획 및 데이터 설계** | 09.15 ~ 09.17 | • 서비스 기획 및 문제 정의 ('생각 vs 실행' 격차 완화)<br>• Firebase Firestore 컬렉션 구조 설계 (`execution_logs`, `conversations`)<br>• 100일 시계열 시드 데이터 생성 스크립트 작성 (`generate_seed.py`, `upload_seed.py`) | 시드 데이터 100건 적재, DB 스키마 확정 | **완료** |
-| **Phase 2: 백엔드 API & 분석 엔진** | 09.18 ~ 09.20 | • FastAPI 기반 RESTful API 구축 (시계열 CRUD 엔드포인트)<br>• Pydantic v2 데이터 검증 모델 정의 (입력값 유효성 검증)<br>• Pandas 기반 7일/30일 이동평균 및 추세 연산 엔진 구현 (`/api/data/summary`) | CRUD 엔드포인트, 통계 요약 API, Swagger UI 자동 서빙 | **완료** |
-| **Phase 3: AI 코칭 & 기능 확장** | 09.21 ~ 09.23 | • OpenAI API (`gpt-5.4-mini`) 연동 및 동적 컨텍스트 주입 프롬프트 설계<br>• 원자적 대화 세션 저장 및 복원 기능 구현 (`/api/conversations`)<br>• [보너스 1] OpenAI Function Calling 도구 연동 (`get_data_summary`)<br>• [보너스 2] Chart.js 시계열 꺾은선 차트 시각화, 다크 모드, CSV 추출 기능 탑재 | AI 코칭 챗봇, 도구 호출 파이프라인, 인터랙티브 대시보드 | **완료** |
-| **Phase 4: 배포 및 인프라 안정화** | 09.24 ~ 09.27 | • 프론트엔드 Vercel 배포 및 백엔드 Render 컨테이너 배포<br>• 교차 출처 리소스 공유(CORS) 환경 변수 설정<br>• 무료 플랜 콜드스타트 완화 로딩 배너 적용<br>• 포트 바인딩 타임아웃 및 컬렉션 키 불일치 트러블슈팅 해결 | 라이브 서비스 오픈, OpenAPI 스펙 (`/openapi.json`) 서빙 | **완료** |
-| **Phase 5: 성능 최적화 및 문서화** | 09.28 ~ 10.01 | • 6대 핵심 증빙 스크린샷 수집 및 20종 스크린샷 맵핑<br>• 백엔드 계층형 모듈화 로드맵 이슈 발행 ([GitHub Issue #1](https://github.com/love4xox/execution-coach/issues/1))<br>• LLM 토큰/비용 85% 절감 정량 지표 분석 및 기술 문서 최종화 | 최종 README.md, 백로그 이슈, 증빙 자료 완비 | **완료** |
+#### 🔹 Phase 1: 기획 및 데이터 설계 `(2026.09.15 ~ 09.17)`
+- [x] 서비스 기획 및 '생각 vs 실행' 격차 완화 핵심 가치 정의
+- [x] Firestore 컬렉션 구조 설계 (`execution_logs`, `conversations`)
+- [x] 100일 시계열 시드 데이터 자동 생성 및 적재 완료
+
+#### 🔹 Phase 2: 백엔드 API 및 분석 엔진 구축 `(2026.09.18 ~ 09.20)`
+- [x] FastAPI 기반 시계열 데이터 CRUD 엔드포인트 구현
+- [x] Pydantic v2 데이터 검증 모델 정의 (비정상 입력 422 사전 차단)
+- [x] Pandas 기반 7일/30일 이동평균 및 추세 연산 엔진 개발 (`/api/data/summary`)
+
+#### 🔹 Phase 3: AI 코칭 파이프라인 및 기능 확장 `(2026.09.21 ~ 09.23)`
+- [x] OpenAI API (`gpt-5.4-mini`) 연동 및 동적 컨텍스트 주입 프롬프트 설계
+- [x] 원자적(Atomic) 대화 세션 저장 및 복원 기능 구현
+- [x] **[보너스 1]** AI 도구 호출 (Function Calling) 파이프라인 탑재
+- [x] **[보너스 2]** Chart.js 시계열 꺾은선 차트, 다크 모드, CSV 내보내기 구현
+
+#### 🔹 Phase 4: 배포 및 인프라 안정화 `(2026.09.24 ~ 09.27)`
+- [x] 프론트엔드(Vercel) 및 백엔드(Render) 분리 배포 완료
+- [x] CORS 화이트리스트 설정 및 무료 티어 콜드스타트 완화 안내 배너 적용
+- [x] Render 포트 바인딩 타임아웃 및 Firestore 컬렉션 키 불일치 문제 해결
+
+#### 🔹 Phase 5: 성능 최적화 및 문서화 `(2026.09.28 ~ 10.01)`
+- [x] 사전 통계 요약 주입 방식을 통한 LLM 토큰/비용 약 85% 절감 달성
+- [x] 백엔드 단일 파일 계층형 모듈화 작업 이슈 등록 ([GitHub Issue #1](https://github.com/love4xox/execution-coach/issues/1))
+- [x] 20종 검증 증빙 스크린샷 맵핑 및 프로덕션 규격 기술 문서 완성
 
 ---
 
