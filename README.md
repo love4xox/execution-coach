@@ -8,42 +8,43 @@
 ## 📌 1. 프로젝트 개요 및 서비스 소개
 
 - **프로젝트명**: 생각 vs 실행 점수 기반 나만의 AI 실행 코치 대시보드
-- **개발 기간**: 2026.09.15 ~ 2026.10.01
+- **개발 기간**: 2026.09.15 - 2026.10.01
 - **개발자 / 작성자**: 정형경
 - **서비스 소개 (무엇을 해결하는가?)**:
   - **문제 정의**: 많은 사람들이 목표를 세우고 고민(생각)하는 데 많은 에너지를 쓰지만, 실제 행동(실행)으로 옮기지 못하는 '생각 vs 실행'의 불일치 문제를 겪습니다.
   - **해결 방안**:
-    1. 매일의 실행 점수(0~100점)와 회고 메모를 시계열로 기록 및 관리(CRUD)합니다.
+    1. 매일의 실행 점수(0-100점)와 회고 메모를 시계열로 기록 및 관리(CRUD)합니다.
     2. 100일 이상의 누적 데이터를 Pandas로 실시간 가공하여 이동 평균(7일/30일) 및 실행 추세를 진단합니다.
     3. AI 실행 코치가 사용자의 정량적 통계 지표를 근거로 직설적인 피드백과 오늘 즉시 실행 가능한 **15분 단위 초소형 액션 플랜**을 제시합니다.
     4. 지능형 Function Calling을 통해 질문 의도에 따라 AI가 내부 통계 도구를 능동적으로 호출합니다.
 
 ---
 
-## 📅 2. 프로젝트 개발 진행 타임라인
+## 📅 2. 프로젝트 개발 진행 타임라인 (Milestones)
 
-#### 🔹 Phase 1: 기획 및 데이터 설계 `(2026.09.15 ~ 09.17)`
+#### 🔹 Phase 1: 기획 및 데이터 설계 `(2026.09.15 - 09.17)`
 - [x] 서비스 기획 및 '생각 vs 실행' 격차 완화 핵심 가치 정의
 - [x] Firestore 컬렉션 구조 설계 (`execution_logs`, `conversations`)
-- [x] 100일 시계열 시드 데이터 자동 생성 및 적재 완료
+- [x] 100일 시계열 시드 데이터 자동 생성 및 적재 완료 (`generate_seed.py`, `upload_seed.py`)
 
-#### 🔹 Phase 2: 백엔드 API 및 분석 엔진 구축 `(2026.09.18 ~ 09.20)`
+#### 🔹 Phase 2: 백엔드 API 및 분석 엔진 구축 `(2026.09.18 - 09.20)`
 - [x] FastAPI 기반 시계열 데이터 CRUD 엔드포인트 구현
 - [x] Pydantic v2 데이터 검증 모델 정의 (비정상 입력 422 사전 차단)
 - [x] Pandas 기반 7일/30일 이동평균 및 추세 연산 엔진 개발 (`/api/data/summary`)
 
-#### 🔹 Phase 3: AI 코칭 파이프라인 및 기능 확장 `(2026.09.21 ~ 09.23)`
+#### 🔹 Phase 3: AI 코칭 파이프라인 및 기능 확장 `(2026.09.21 - 09.23)`
 - [x] OpenAI API (`gpt-5.4-mini`) 연동 및 동적 컨텍스트 주입 프롬프트 설계
 - [x] 원자적(Atomic) 대화 세션 저장 및 복원 기능 구현
 - [x] **[보너스 1]** AI 도구 호출 (Function Calling) 파이프라인 탑재
 - [x] **[보너스 2]** Chart.js 시계열 꺾은선 차트, 다크 모드, CSV 내보내기 구현
 
-#### 🔹 Phase 4: 배포 및 인프라 안정화 `(2026.09.24 ~ 09.27)`
+#### 🔹 Phase 4: 배포 및 인프라 안정화 `(2026.09.24 - 09.27)`
 - [x] 프론트엔드(Vercel) 및 백엔드(Render) 분리 배포 완료
-- [x] CORS 화이트리스트 설정 및 무료 티어 콜드스타트 완화 안내 배너 적용
-- [x] Render 포트 바인딩 타임아웃 및 Firestore 컬렉션 키 불일치 문제 해결
+- [x] **CORS 환경별 화이트리스트 구성**: Vercel 프로덕션 도메인 및 로컬 오리진 정밀 바인딩
+- [x] **콜드스타트 완화 안내 배너 구현**: 무료 티어 슬립 해제 지연(30-50초) 시각적 로딩 안내 적용
+- [x] Render 포트 바인딩 타임아웃 및 Firestore 컬렉션 키 불일치 트러블슈팅 해결
 
-#### 🔹 Phase 5: 성능 최적화 및 문서화 `(2026.09.28 ~ 10.01)`
+#### 🔹 Phase 5: 성능 최적화 및 문서화 `(2026.09.28 - 10.01)`
 - [x] 사전 통계 요약 주입 방식을 통한 LLM 토큰/비용 약 85% 절감 달성
 - [x] 백엔드 단일 파일 계층형 모듈화 작업 이슈 등록 ([GitHub Issue #1](https://github.com/love4xox/execution-coach/issues/1))
 - [x] 20종 검증 증빙 스크린샷 맵핑 및 프로덕션 규격 기술 문서 완성
@@ -72,14 +73,16 @@
   │  - Chart.js 시계열 꺾은선 차트 시각화                    │
   │  - 다크 모드 토글 (Dark/Light Mode)                     │
   │  - CSV 데이터 내보내기 & 실시간 대화 세션 관리          │
+  │  - 서버 슬립 해제 지연 대응 로딩 안내 배너 적용        │
   └───────────────────────────┬────────────────────────────┘
-                              │ HTTPS / REST API (CORS 허용)
+                              │ HTTPS / REST API (CORS 화이트리스트 제어)
                               ▼
   [ Application Tier ]
   ┌────────────────────────────────────────────────────────┐
   │  Render 클라우드 배포 백엔드 (FastAPI / Python 3.14)   │
   │  - Uvicorn 기반 비동기 ASGI 고성능 서버 구동            │
   │  - Pydantic v2 데이터 유효성 검증 & 통계 스키마 처리   │
+  │  - CORSMiddleware 화이트리스트 기반 브라우저 보호       │
   │  - OpenAPI 규격 자동 생성 (/docs, /openapi.json)       │
   └─────────────┬────────────────────────────┬─────────────┘
                 │                            │
@@ -97,7 +100,7 @@
 ### 4.2 계층별 상세 기술 스택
 | 계층 (Layer) | 사용 기술 | 적용 목적 및 주요 역할 |
 | :--- | :--- | :--- |
-| **Frontend** | HTML5, JavaScript (ES6+), CSS3 | 반응형 싱글 페이지(SPA), 모바일/데스크톱 적응형 레이아웃 |
+| **Frontend** | HTML5, JavaScript (ES6+), CSS3 | 반응형 싱글 페이지(SPA), 모바일/데스크톱 적응형 레이아웃, 콜드스타트 상태 안내 배너 |
 | **Data Viz & UX** | Chart.js | 최근 14일 시계열 실행 점수 꺾은선 추이 그래프 렌더링 |
 | **Backend (Framework)** | Python 3.14, FastAPI | 비동기 고성능 RESTful API 라우팅, Swagger 및 OpenAPI 표준 자동 연동 |
 | **Backend (ASGI Server)** | Uvicorn | `uvloop` 기반 초고속 비동기 ASGI 웹 서버로, 클라이언트의 논블로킹(Non-blocking) I/O 동시 요청을 처리하고 Render 컨테이너 환경에서 `$PORT`를 안전하게 바인딩하여 무중단 서빙 수행 |
@@ -105,6 +108,7 @@
 | **Database** | Firebase Cloud Firestore | NoSQL 문서 기반 영구 데이터 저장소 (`execution_logs`, `conversations`) |
 | **Data Analytics** | Pandas, NumPy | 시계열 데이터 정렬, 7일/30일 이동평균 연산, 직전 대비 추세 판정 |
 | **AI & LLM** | OpenAI API (`gpt-5.4-mini`) | 맞춤형 시스템 프롬프트 주입 및 Tool/Function Calling 처리 |
+| **Security & Network** | FastAPI CORSMiddleware | 프로덕션 Vercel 도메인을 엄격히 화이트리스트로 제한하여 무단 크로스 오리진 요청 원천 차단 |
 | **배포 및 CI/CD** | Render, Vercel, GitHub Actions | 백엔드 컨테이너 빌드 및 프론트엔드 정적 호스팅 자동화 (CI/CD) |
 
 ---
@@ -161,7 +165,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ## ⚙️ 6. 핵심 기능 구현 및 검증 결과
 
 ### 6.1 시계열 데이터 관리 (CRUD)
-- **Create (`POST /api/data`)**: 일자(`YYYY-MM-DD`), 실행 점수(`0~100`), 회고 메모를 입력받아 Firestore의 `execution_logs` 컬렉션에 적재 (`201 Created`).
+- **Create (`POST /api/data`)**: 일자(`YYYY-MM-DD`), 실행 점수(`0-100`), 회고 메모를 입력받아 Firestore의 `execution_logs` 컬렉션에 적재 (`201 Created`).
   - *프론트엔드 연동 흐름*: 데이터 등록/수정 성공 시 콜백 체인에서 `fetchDataList()`를 즉시 재호출하여 화면의 CRUD 테이블을 동기 갱신하고 연이어 `fetchSummary()`를 호출합니다[cite: 1].
 - **Read (`GET /api/data`, `GET /api/data/{id}`)**: 전체 102건의 시계열 목록 또는 특정 날짜의 단건 로그를 일자순 정렬하여 반환.
 - **Update (`PUT /api/data/{id}`)**: 특정 날짜의 점수 및 메모를 수정하고 갱신된 데이터를 `200 OK`로 반환 (Swagger 및 화면 바인딩 검증 완료).
@@ -173,7 +177,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 - **실제 JSON 응답 스냅샷**:
 ```json
 {
-  "period": "2026-06-09 ~ 2026-09-22",
+  "period": "2026-06-09 - 2026-09-22",
   "total_count": 102,
   "overall_mean": 67.0,
   "recent_7_mean": 71.3,
@@ -223,12 +227,12 @@ from pydantic import BaseModel, Field
 # 1. 일일 실행 로그 생성 검증 스키마
 class ExecutionLogCreate(BaseModel):
     date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="기록 날짜 (YYYY-MM-DD)")
-    value: int = Field(..., ge=0, le=100, description="실행 점수 (0~100점)")
+    value: int = Field(..., ge=0, le=100, description="실행 점수 (0-100점)")
     memo: str = Field(..., min_length=1, max_length=500, description="실행 내용 및 고민 메모")
 
 # 2. 일일 실행 로그 수정 스키마
 class ExecutionLogUpdate(BaseModel):
-    value: Optional[int] = Field(None, ge=0, le=100, description="수정할 실행 점수 (0~100점)")
+    value: Optional[int] = Field(None, ge=0, le=100, description="수정할 실행 점수 (0-100점)")
     memo: Optional[str] = Field(None, min_length=1, max_length=500, description="수정할 실행 내용 및 메모")
 
 # 3. Pydantic 기반 시계열 통계 요약 (Data Summary) 응답 스키마
@@ -262,7 +266,7 @@ class ConversationCreate(BaseModel):
 ```
 
 #### 🛡️ 스키마 위반 시 422 에러 반환 구조 및 프론트엔드 연동
-클라이언트가 제약 조건(점수 0~100, 일자 정규식)을 위반할 경우 FastAPI가 `422 Unprocessable Entity` 에러를 반환합니다.
+클라이언트가 제약 조건(점수 0-100, 일자 정규식)을 위반할 경우 FastAPI가 `422 Unprocessable Entity` 에러를 반환합니다.
 - **서버 422 에러 응답 구조**:
 ```json
 {
@@ -311,7 +315,7 @@ def get_data_summary() -> dict:
         trend = "안정적"
         
     return {
-        "period": f"{df['date'].min()} ~ {df['date'].max()}",
+        "period": f"{df['date'].min()} - {df['date'].max()}",
         "total_count": len(df),
         "overall_mean": overall_mean,
         "recent_7_mean": recent_7_mean,
@@ -359,7 +363,7 @@ async def chat_coach(request: ChatRequest):
 [답변 원칙]
 1. 데이터 요약 수치(평균, 추세)를 근거로 들어 구체적으로 상태를 진단할 것.
 2. 생각 과잉/실행 지연 패턴을 직설적으로 짚고, 오늘 즉시 실천할 15분 단위 초소형 액션 1가지를 제시할 것.
-3. 3~4문장 내외로 간결하고 임팩트 있게 답변할 것.
+3. 3-4문장 내외로 간결하고 임팩트 있게 답변할 것.
 """
     # 3. LLM API 호출
     response = client.chat.completions.create(
@@ -523,22 +527,37 @@ backend/
 - **동시성 충돌 방지 및 기대 동작**:
   - 동일 세션 또는 동일 일자 로그 동시 수정 충돌 시, Firestore의 기본 정책인 **Last-Write-Wins(최종 커밋 우선)** 방식을 따르며, 대화 히스토리 업데이트 시에는 `transaction.update`를 적용하여 메시지 유실을 방지합니다.
 
-### 3. 예외 처리, 모니터링 및 보안 정책
+### 3. 예외 처리, 모니터링 및 보안 정책 (CORS 및 입력 방어)
 - **Pydantic 422 검증 오류 처리**:
   - 클라이언트에서 제약 조건 위반 시 `422 Unprocessable Entity`를 반환하며, 프론트엔드는 응답의 `loc` 및 `msg`를 파싱해 폼 하단에 인라인 경고 문구로 즉각 렌더링합니다.
 - **서비스 계정 키(`serviceAccountKey.json`) 보안**:
   - 로컬 환경에서는 `.gitignore`에 등록하여 Git 추적을 차단하고, 배포 환경에서는 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 주입하여 최소 권한(Least Privilege) 원칙을 준수합니다.
-- **CORS 및 이상 징후 방어**:
-  - Production 환경 배포 시 `CORS_ORIGINS`는 실제 배포 도메인만 화이트리스트로 지정하며, 프론트/백엔드 양단에서 입력 길이 제한 및 문자 필터링을 적용합니다.
+- **CORS 환경별 화이트리스트 구성 (`main.py`)**:
+  - 프론트엔드 배포 출처(`https://execution-coach-25e5lk54b-mind-mate1.vercel.app`)와 백엔드 API 출처(`https://execution-coach.onrender.com`) 간 동일 출처 정책(SOP) 위반 차단을 방지하기 위해 백엔드에 FastAPI `CORSMiddleware`를 등록하고 환경 변수 `CORS_ORIGINS`로 엄격히 관리합니다[cite: 2]:
+```python
+from fastapi.middleware.cors import CORSMiddleware
+
+# 환경 변수로부터 허용 오리진 리스트 로드 (미지정 시 안전한 기본값)
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in CORS_ORIGINS] if CORS_ORIGINS != ["*"] else ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+- **XSS 및 인젝션 방어**: 프론트엔드 및 백엔드 양단에서 입력 길이 제한(500자) 및 문자 필터링을 적용하여 인젝션 공격을 예방합니다.
 
 ### 4. LLM 비용 최적화 및 신뢰성 정책
 - **정량적 최적화 및 전달 방식 비교 (누적 100일 시계열 데이터 기준)**:
   1. **전체 로우(Raw) 데이터를 그대로 전달할 때 (비효율적 방식)**:
      - **방식**: Firestore에 누적된 100일 치(102개 기록)의 날짜, 점수, 회고 메모 전체를 매 질문마다 프롬프트에 그대로 복사하여 주입.
-     - **문제점**: 1회 질의당 약 **4,500 ~ 6,000 토큰**이 소모되어 API 비용이 급증하고, 평균 응답 대기시간(Latency)이 **약 3.2초**까지 길어짐.
+     - **문제점**: 1회 질의당 약 **4,500 - 6,000 토큰**이 소모되어 API 비용이 급증하고, 평균 응답 대기시간(Latency)이 **약 3.2초**까지 길어짐.
   2. **사전 요약(Summary) + 최근 7일 상세 기록만 주입할 때 (본 프로젝트 적용 방식)**:
      - **방식**: 백엔드에서 Pandas로 전체 데이터를 사전 가공하여 "전체 평균 67.0점, 최근 추세 하강세" 형태의 핵심 지표 1장과, 최근 7일치 상세 기록만 선별 주입.
-     - **최적화 성과**: 1회 질의당 약 **650 ~ 800 토큰** 수준으로 줄여 **토큰 비용 약 85% 절감**, 평균 Latency를 **약 1.1초**로 단축.
+     - **최적화 성과**: 1회 질의당 약 **650 - 800 토큰** 수준으로 줄여 **토큰 비용 약 85% 절감**, 평균 Latency를 **약 1.1초**로 단축.
 - **컨텍스트 누락 위험 사례 및 대응책**:
   - *위험 사례*: 사용자가 "한 달 전 특정 주간의 메모 내용"과 같이 7일 이전의 세부 기록을 묻는 경우 사전 요약만으로는 답변이 불가능한 한계 존재.
   - *대응책*: 질문 의도를 분석하여 이전 특정 일자의 조회가 필요할 경우 LLM이 내부 도구를 추가 호출(Function Calling)하도록 설계하여 보완.
@@ -551,8 +570,29 @@ backend/
 - **프론트엔드 상태 갱신 타이밍**:
   - 사용자가 새 데이터를 등록하거나 수정한 직후, 프론트엔드는 비동기 체인을 통해 `fetchDataList()`(테이블)와 `fetchSummary()`(통계 카드 및 차트)를 즉각 순차 재호출하여 화면 상태를 최신화합니다[cite: 1].
 
-### 6. 인스턴스 콜드스타트 완화 방안
-- Render 무료 플랜의 인스턴스 슬립(Sleep) 현상을 방지하기 위해 외부 주기적 헬스체크 도구(예: Cron-job.org, UptimeRobot)를 활용하여 10분 간격으로 `/docs` 엔드포인트를 호출하는 프리워밍(Pre-warming)을 권장합니다:
+### 6. 인스턴스 콜드스타트 완화 방안 (프론트엔드 UI/UX 구현)
+- **무료 인스턴스 슬립 해제 대응 로딩 배너 (`index.html`)**:
+  - Render 무료 플랜의 비활성 슬립 특성상 발생하는 최초 요청 응답 지연(30-50초) 동안 사용자가 시스템 오류로 오인하고 이탈하는 것을 방지하기 위해, 최상단에 스피너가 포함된 파란색 로딩 배너를 배치하여 상태를 투명하게 안내합니다:
+```html
+<!-- 서버 콜드스타트 안내 배너 -->
+<div id="loadingBanner" class="full-width loading-banner" style="display: none;">
+  <div class="spinner"></div>
+  <span>서버와 연결 중입니다. 무료 인스턴스 슬립 해제로 인해 첫 접속 시 약 30~50초 소요될 수 있습니다...</span>
+</div>
+```
+```javascript
+// 페이지 로드 시 배너 표출 후 초기 비동기 fetch 완료 시 자동 숨김 제어
+const banner = document.getElementById("loadingBanner");
+if (banner) banner.style.display = "flex";
+
+try {
+  await Promise.all([fetchSummary(), fetchDataList(), fetchConversations()]);
+} finally {
+  if (banner) banner.style.display = "none";
+}
+```
+- **주기적 프리워밍(Pre-warming) 권장 설정**:
+  - 외부 UptimeRobot 또는 Cron-job.org를 연동하여 10분 주기로 `/docs` 엔드포인트를 핑(Ping) 호출하여 슬립을 사전에 예방할 수 있습니다:
   - *Cron 설정 예시*: `*/10 * * * * curl -s https://execution-coach.onrender.com/docs > /dev/null`
 
 ---
