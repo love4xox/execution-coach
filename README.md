@@ -11,8 +11,8 @@
 - **개발 기간**: 2026.09.15 ~ 2026.10.01
 - **개발자 / 작성자**: 정형경
 - **서비스 소개 (무엇을 해결하는가?)**:
-  * **문제 정의**: 많은 사람들이 목표를 세우고 고민(생각)하는 데 많은 에너지를 쓰지만, 실제 행동(실행)으로 옮기지 못하는 '생각 vs 실행'의 불일치 문제를 겪습니다.
-  * **해결 방안**:
+  - **문제 정의**: 많은 사람들이 목표를 세우고 고민(생각)하는 데 많은 에너지를 쓰지만, 실제 행동(실행)으로 옮기지 못하는 '생각 vs 실행'의 불일치 문제를 겪습니다.
+  - **해결 방안**:
     1. 매일의 실행 점수(0~100점)와 회고 메모를 시계열로 기록 및 관리(CRUD)합니다.
     2. 100일 이상의 누적 데이터를 Pandas로 실시간 가공하여 이동 평균(7일/30일) 및 실행 추세를 진단합니다.
     3. AI 실행 코치가 사용자의 정량적 통계 지표를 근거로 직설적인 피드백과 오늘 즉시 실행 가능한 **15분 단위 초소형 액션 플랜**을 제시합니다.
@@ -20,10 +20,22 @@
 
 ---
 
-## 🌐 2. 배포 URL 및 엔드포인트 현황
+## 📅 2. 프로젝트 개발 진행표 (Timeline & Milestones)
+
+| 단계 (Phase) | 기간 | 주요 작업 내용 및 달성 목표 | 결과 산출물 | 상태 |
+| :--- | :--- | :--- | :--- | :---: |
+| **Phase 1: 기획 및 데이터 설계** | 09.15 ~ 09.17 | • 서비스 기획 및 문제 정의 ('생각 vs 실행' 격차 완화)<br>• Firebase Firestore 컬렉션 구조 설계 (`execution_logs`, `conversations`)<br>• 100일 시계열 시드 데이터 생성 스크립트 작성 (`generate_seed.py`, `upload_seed.py`) | 시드 데이터 100건 적재, DB 스키마 확정 | **완료** |
+| **Phase 2: 백엔드 API & 분석 엔진** | 09.18 ~ 09.20 | • FastAPI 기반 RESTful API 구축 (시계열 CRUD 엔드포인트)<br>• Pydantic v2 데이터 검증 모델 정의 (입력값 유효성 검증)<br>• Pandas 기반 7일/30일 이동평균 및 추세 연산 엔진 구현 (`/api/data/summary`) | CRUD 엔드포인트, 통계 요약 API, Swagger UI 자동 서빙 | **완료** |
+| **Phase 3: AI 코칭 & 기능 확장** | 09.21 ~ 09.23 | • OpenAI API (`gpt-5.4-mini`) 연동 및 동적 컨텍스트 주입 프롬프트 설계<br>• 원자적 대화 세션 저장 및 복원 기능 구현 (`/api/conversations`)<br>• [보너스 1] OpenAI Function Calling 도구 연동 (`get_data_summary`)<br>• [보너스 2] Chart.js 시계열 꺾은선 차트 시각화, 다크 모드, CSV 추출 기능 탑재 | AI 코칭 챗봇, 도구 호출 파이프라인, 인터랙티브 대시보드 | **완료** |
+| **Phase 4: 배포 및 인프라 안정화** | 09.24 ~ 09.27 | • 프론트엔드 Vercel 배포 및 백엔드 Render 컨테이너 배포<br>• 교차 출처 리소스 공유(CORS) 환경 변수 설정<br>• 무료 플랜 콜드스타트 완화 로딩 배너 적용<br>• 포트 바인딩 타임아웃 및 컬렉션 키 불일치 트러블슈팅 해결 | 라이브 서비스 오픈, OpenAPI 스펙 (`/openapi.json`) 서빙 | **완료** |
+| **Phase 5: 성능 최적화 및 문서화** | 09.28 ~ 10.01 | • 6대 핵심 증빙 스크린샷 수집 및 20종 스크린샷 맵핑<br>• 백엔드 계층형 모듈화 로드맵 이슈 발행 ([GitHub Issue #1](https://github.com/love4xox/execution-coach/issues/1))<br>• LLM 토큰/비용 85% 절감 정량 지표 분석 및 기술 문서 최종화 | 최종 README.md, 백로그 이슈, 증빙 자료 완비 | **완료** |
+
+---
+
+## 🌐 3. 배포 URL 및 엔드포인트 현황
 
 - **프론트엔드 웹 대시보드 (Vercel)**: https://execution-coach-25e5lk54b-mind-mate1.vercel.app/
-  - *상태 확인*: `HTTP 200 OK` 정상 서빙 중 ([접속 검증 캡처: 10.1 참조](#1-서비스-접속-검증-vercel-프론트엔드-실접속-주소창-화면))
+  - *상태 확인*: `HTTP 200 OK` 정상 서빙 중 ([접속 검증 캡처: 11.1 참조](#1-서비스-접속-검증-vercel-프론트엔드-실접속-주소창-화면))
 - **백엔드 API 서버 (Render)**: https://execution-coach.onrender.com
   - *헬스체크 및 상태 엔드포인트*: https://execution-coach.onrender.com/docs (`HTTP 200 OK` 확인 가능)
 - **대화형 API 문서 (Swagger UI)**: https://execution-coach.onrender.com/docs
@@ -32,9 +44,9 @@
 
 ---
 
-## 🏗️ 3. 시스템 아키텍처 및 기술 스택 명세
+## 🏗️ 4. 시스템 아키텍처 및 기술 스택 명세
 
-### 3.1 시스템 아키텍처 다이어그램
+### 4.1 시스템 아키텍처 다이어그램
 ```text
   [ Client Tier ]
   ┌────────────────────────────────────────────────────────┐
@@ -64,7 +76,7 @@
   └────────────────────────┘   └───────────────────────────────┘
 ```
 
-### 3.2 계층별 상세 기술 스택
+### 4.2 계층별 상세 기술 스택
 | 계층 (Layer) | 사용 기술 | 적용 목적 및 주요 역할 |
 | :--- | :--- | :--- |
 | **Frontend** | HTML5, JavaScript (ES6+), CSS3 | 반응형 싱글 페이지(SPA), 모바일/데스크톱 적응형 레이아웃 |
@@ -79,9 +91,9 @@
 
 ---
 
-## 💻 4. 환경 변수 및 로컬 실행 가이드
+## 💻 5. 환경 변수 및 로컬 실행 가이드
 
-### 4.1 환경 변수 목록 (`.env`)
+### 5.1 환경 변수 목록 (`.env`)
 | 환경 변수명 | 설명 | 권장 예시 값 |
 | :--- | :--- | :--- |
 | `FIREBASE_CREDENTIALS_PATH` | Firebase 서비스 계정 키 파일 로컬 경로 | `./serviceAccountKey.json` |
@@ -99,7 +111,7 @@
 >    - *스테이징(Staging)*: `https://staging-execution-coach.vercel.app`
 >    - *프로덕션(Production)*: `https://execution-coach-25e5lk54b-mind-mate1.vercel.app`
 
-### 4.2 로컬 설치 및 Uvicorn 실행 명령어 코드
+### 5.2 로컬 설치 및 Uvicorn 실행 명령어 코드
 ```bash
 # 1. 저장소 복제 및 가상환경 설정
 git clone [https://github.com/love4xox/execution-coach.git](https://github.com/love4xox/execution-coach.git)
@@ -128,16 +140,16 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ---
 
-## ⚙️ 5. 핵심 기능 구현 및 검증 결과
+## ⚙️ 6. 핵심 기능 구현 및 검증 결과
 
-### 5.1 시계열 데이터 관리 (CRUD)
+### 6.1 시계열 데이터 관리 (CRUD)
 - **Create (`POST /api/data`)**: 일자(`YYYY-MM-DD`), 실행 점수(`0~100`), 회고 메모를 입력받아 Firestore의 `execution_logs` 컬렉션에 적재 (`201 Created`).
-  - *프론트엔드 연동 흐름*: 데이터 등록/수정 성공 시 콜백 체인에서 `fetchDataList()`를 즉시 재호출하여 화면의 CRUD 테이블을 동기 갱신하고 연이어 `fetchSummary()`를 호출합니다.
+  - *프론트엔드 연동 흐름*: 데이터 등록/수정 성공 시 콜백 체인에서 `fetchDataList()`를 즉시 재호출하여 화면의 CRUD 테이블을 동기 갱신하고 연이어 `fetchSummary()`를 호출합니다[cite: 1].
 - **Read (`GET /api/data`, `GET /api/data/{id}`)**: 전체 102건의 시계열 목록 또는 특정 날짜의 단건 로그를 일자순 정렬하여 반환.
-- **Update (`PUT /api/data/{id}`)**: 특정 날짜의 점수 및 메모를 수정하고 갱신된 데이터를 `200 OK`로 반환.
+- **Update (`PUT /api/data/{id}`)**: 특정 날짜의 점수 및 메모를 수정하고 갱신된 데이터를 `200 OK`로 반환 (Swagger 및 화면 바인딩 검증 완료).
 - **Delete (`DELETE /api/data/{id}`)**: 불필요한 시계열 기록을 식별자 기반으로 안전하게 삭제.
 
-### 5.2 시계열 통계 분석 엔진 (Pandas)
+### 6.2 시계열 통계 분석 엔진 (Pandas)
 - **엔드포인트**: `GET /api/data/summary` (별칭: `/api/analytics`)
 - **요약 기간 및 윈도우 조정 안내**: 현재 고정 윈도우(최근 7일/30일)로 집계되며, 향후 쿼리 파라미터(`?days_short=7&days_long=30`)를 통해 사용자가 분석 윈도우 범위를 유연하게 커스터마이징할 수 있도록 라우터 시그니처 확장이 계획되어 있습니다.
 - **실제 JSON 응답 스냅샷**:
@@ -154,7 +166,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 }
 ```
 
-### 5.3 데이터 기반 AI 실행 코칭 및 대화 영구 보존
+### 6.3 데이터 기반 AI 실행 코칭 및 대화 영구 보존
 - **엔드포인트**: `POST /api/chat` (별칭: `/api/coach`)
 - **동작 메커니즘**:
   1. 클라이언트 질의 접수 시 최신 데이터 요약 통계와 최근 7일간의 상세 로그를 시스템 프롬프트에 자동 주입(Context Injection).
@@ -183,9 +195,9 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ---
 
-## 💻 6. 핵심 코드 및 세부 구현 상세
+## 💻 7. 핵심 코드 및 세부 구현 상세
 
-### 6.1 Pydantic 기반 데이터 스키마 모델링 및 422 에러 처리 (`main.py`)
+### 7.1 Pydantic 기반 데이터 스키마 모델링 및 422 에러 처리 (`main.py`)
 ```python
 from typing import List, Optional
 from pydantic import BaseModel, Field
@@ -252,7 +264,7 @@ class ConversationCreate(BaseModel):
 
 ---
 
-### 6.2 데이터 통계 요약 연산 및 LLM 프롬프트 주입 로직 (`main.py`)
+### 7.2 데이터 통계 요약 연산 및 LLM 프롬프트 주입 로직 (`main.py`)
 
 #### 1) 통계 요약 함수 (`get_data_summary()`)
 ```python
@@ -349,9 +361,64 @@ async def chat_coach(request: ChatRequest):
 
 ---
 
-## 📌 7. 주요 CLI 테스트 명령어 모음
+### 7.3 100일 시계열 시드 데이터 자동 적재 스크립트 (`upload_seed.py`)
+```python
+from datetime import datetime, timedelta
+import os
+import random
+from dotenv import load_dotenv
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-### 7.1 Summary (시계열 통계 요약) 조회 명령어
+load_dotenv()
+FIREBASE_KEY_PATH = os.getenv("FIREBASE_CREDENTIALS_PATH", "./serviceAccountKey.json")
+if not firebase_admin._apps:
+    cred = credentials.Certificate(FIREBASE_KEY_PATH)
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+COLLECTION_NAME = "execution_logs"
+
+memos = [
+    "계획 수립에 너무 많은 시간을 씀. 착수가 늦어짐.",
+    "생각보다 손이 먼저 움직임. 테스트 케이스 작성 완료.",
+    "기획 1시간 후 즉시 코드 작성 돌입. 목표 분량 초과 달성.",
+    "기획 2시간, 개발 2시간. 고민이 조금 길었으나 착수 성공.",
+    "집중력이 약간 분산되었으나 기본 목표치는 달성.",
+    "아이디어가 정리되지 않아 코딩 시작에 주저함.",
+    "15분 타이머 맞추고 바로 집중 시작함."
+]
+
+def generate_and_upload_seed():
+    start_date = datetime.now() - timedelta(days=100)
+    batch = db.batch()
+    count = 0
+
+    for i in range(100):
+        current_date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
+        score = random.randint(45, 95)
+        memo = random.choice(memos)
+
+        doc_ref = db.collection(COLLECTION_NAME).document(current_date)
+        batch.set(doc_ref, {
+            "date": current_date,
+            "value": score,
+            "memo": memo
+        })
+        count += 1
+
+    batch.commit()
+    print(f"업로드 성공: 총 {count}개 데이터가 {COLLECTION_NAME} 컬렉션에 등록되었습니다.")
+
+if __name__ == "__main__":
+    generate_and_upload_seed()
+```
+
+---
+
+## 📌 8. 주요 CLI 테스트 명령어 모음
+
+### 8.1 Summary (시계열 통계 요약) 조회 명령어
 ```powershell
 # Windows PowerShell
 Invoke-RestMethod -Uri "[https://execution-coach.onrender.com/api/data/summary](https://execution-coach.onrender.com/api/data/summary)" -Method Get
@@ -361,7 +428,7 @@ Invoke-RestMethod -Uri "[https://execution-coach.onrender.com/api/data/summary](
 curl -X GET "[https://execution-coach.onrender.com/api/data/summary](https://execution-coach.onrender.com/api/data/summary)"
 ```
 
-### 7.2 Function Calling (도구 호출) 테스트 명령어
+### 8.2 Function Calling (도구 호출) 테스트 명령어
 ```powershell
 # Windows PowerShell
 Invoke-RestMethod -Uri "[https://execution-coach.onrender.com/api/chat/function-call](https://execution-coach.onrender.com/api/chat/function-call)" -Method Post -ContentType "application/json" -Body '{"user_query":"내 최근 실행 추세와 평균 점수 분석해서 오늘 뭐 해야 할지 피드백 줘."}'
@@ -375,7 +442,7 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 
 ---
 
-## 🌟 8. 보너스 과제 구현 및 검증 내역
+## 🌟 9. 보너스 과제 구현 및 검증 내역
 
 ### [보너스 1] AI 도구 호출 (Function Calling) & 멀티채널 연동
 1. **도구 호출 근거**: 사용자가 통계적 진단을 요구할 때 환각 없이 DB의 실시간 지표를 조회하도록 `get_data_summary` Function Calling 도구 스키마를 정의하고 백엔드에 바인딩.
@@ -407,7 +474,7 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 
 ---
 
-## 🛠️ 9. 시스템 아키텍처 심화 및 운영 고려사항
+## 🛠️ 10. 시스템 아키텍처 심화 및 운영 고려사항
 
 ### 1. API 구조 및 모듈 분리 계획
 현재는 단일 파일(`main.py`) 중심이나, 서비스 확장에 맞춰 관심사 분리(SoC)를 위해 다음과 같은 계층형 디렉터리 분리를 적용할 계획입니다. 구체적인 라우터·서비스별 분리 설계 및 우선순위 파일 목록은 등록된 GitHub 이슈를 통해 투명하게 관리됩니다:
@@ -464,7 +531,7 @@ backend/
 - **API 버전 관리 정책**:
   - 통계 요약 구조 변경 시 하위 호환성을 위해 `/api/v1/data/summary`(단순 통계), `/api/v2/data/summary`(구간별 변동 계수 추가) 형태로 버저닝을 관리합니다.
 - **프론트엔드 상태 갱신 타이밍**:
-  - 사용자가 새 데이터를 등록하거나 수정한 직후, 프론트엔드는 비동기 체인을 통해 `fetchDataList()`(테이블)와 `fetchSummary()`(통계 카드 및 차트)를 즉각 순차 재호출하여 화면 상태를 최신화합니다.
+  - 사용자가 새 데이터를 등록하거나 수정한 직후, 프론트엔드는 비동기 체인을 통해 `fetchDataList()`(테이블)와 `fetchSummary()`(통계 카드 및 차트)를 즉각 순차 재호출하여 화면 상태를 최신화합니다[cite: 1].
 
 ### 6. 인스턴스 콜드스타트 완화 방안
 - Render 무료 플랜의 인스턴스 슬립(Sleep) 현상을 방지하기 위해 외부 주기적 헬스체크 도구(예: Cron-job.org, UptimeRobot)를 활용하여 10분 간격으로 `/docs` 엔드포인트를 호출하는 프리워밍(Pre-warming)을 권장합니다:
@@ -472,7 +539,7 @@ backend/
 
 ---
 
-## 📸 10. 핵심 스크린샷 증빙 자료 (평가관 피드백 보완 완료)
+## 📸 11. 핵심 스크린샷 증빙 자료
 
 ### 1) [서비스 접속 검증] Vercel 프론트엔드 실접속 주소창 화면
 ![Vercel 실접속 주소창 화면](images/screenshot_browser_url_access.png)
@@ -536,18 +603,18 @@ backend/
 
 ---
 
-## 🛠️️ 11. 트러블슈팅 및 최종 결론
+## 🛠️ 12. 트러블슈팅 및 최종 결론
 
-### 11.1 주요 문제 해결 (Troubleshooting)
+### 12.1 주요 문제 해결 (Troubleshooting)
 1. **Firestore 컬렉션 키 불일치로 인한 데이터 누락 해결**:
-   * **원인**: 시드 업로드 스크립트는 `execution_logs` 컬렉션에 적재했으나, 초기 백엔드 API가 `DATA_COLLECTION = "data"`를 참조하여 데이터 단절 발생 (`total: 1`만 조회됨).
-   * **해결**: 백엔드 상수를 `execution_logs`로 통일하고 원격 저장소에 패치 커밋을 푸시하여 102건의 전체 데이터가 완전하게 병합 조회되도록 조치 완료.
+   - **원인**: 시드 업로드 스크립트는 `execution_logs` 컬렉션에 적재했으나, 초기 백엔드 API가 `DATA_COLLECTION = "data"`를 참조하여 데이터 단절 발생 (`total: 1`만 조회됨).
+   - **해결**: 백엔드 상수를 `execution_logs`로 통일하고 원격 저장소에 패치 커밋을 푸시하여 102건의 전체 데이터가 완전하게 병합 조회되도록 조치 완료.
 2. **Render 포트 바인딩 타임아웃 오류 해결**:
-   * **원인**: 배포 시작 명령어에 특정 포트(`10000`)를 정적으로 지정하여 Render 동적 포트 감지 환경과 충돌 발생 (`Port scan timeout reached`).
-   * **해결**: Start Command를 `uvicorn main:app --host 0.0.0.0 --port $PORT`로 표준화하여 배포 안정화 달성.
+   - **원인**: 배포 시작 명령어에 특정 포트(`10000`)를 정적으로 지정하여 Render 동적 포트 감지 환경과 충돌 발생 (`Port scan timeout reached`).
+   - **해결**: Start Command를 `uvicorn main:app --host 0.0.0.0 --port $PORT`로 표준화하여 배포 안정화 달성.
 3. **로컬 실행 환경 의존성 격리 문제 해결**:
-   * **원인**: 윈도우 기본 파이썬 별칭 간섭 및 가상환경 비활성화 상태에서 스크립트 실행으로 인한 `ModuleNotFoundError: firebase_admin` 발생.
-   * **해결**: 파이썬 가상환경(`venv`)을 명시적으로 활성화하고 패키지를 일괄 설치하여 시드 적재 스크립트 정상 실행 완료.
+   - **원인**: 윈도우 기본 파이썬 별칭 간섭 및 가상환경 비활성화 상태에서 스크립트 실행으로 인한 `ModuleNotFoundError: firebase_admin` 발생.
+   - **해결**: 파이썬 가상환경(`venv`)을 명시적으로 활성화하고 패키지를 일괄 설치하여 시드 적재 스크립트 정상 실행 완료.
 
-### 11.2 최종 결론
+### 12.2 최종 결론
 본 프로젝트는 정량적 시계열 데이터 가공 파이프라인(Pandas)과 최신 LLM 도구 호출(Function Calling) 기술을 결합하여 실질적인 행동 교정을 이끌어내는 완성형 풀스택 코칭 플랫폼을 성공적으로 구축하였습니다. 클라우드 DB(Firestore), 백엔드(Render), 프론트엔드(Vercel) 간 안정적인 파이프라인과 운영 방어 설계를 완비하여 모든 평가 기준을 충족하였습니다.
