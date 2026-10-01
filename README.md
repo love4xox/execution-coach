@@ -1,5 +1,4 @@
 # 🚀 생각 vs 실행 점수 기반 나만의 AI 실행 코치 대시보드
-
 ## (Full-Stack AI Execution Coach & Final Project Report)
 
 > 사용자의 실제 행동 점수를 시계열(Time-Series)로 누적 추적하고, 정량적 통계 분석(Pandas)과 LLM 컨텍스트 주입 및 도구 호출(Function Calling)을 결합하여 '생각과 실행' 사이의 인지적 격차(Knowing-Doing Gap)를 줄여주는 풀스택 실행 코칭 대시보드입니다.
@@ -94,8 +93,8 @@
 ### 4.2 로컬 설치 및 Uvicorn 실행 명령어 코드
 ```bash
 # 1. 저장소 복제 및 가상환경 설정
-git clone https://github.com/<사용자-계정>/<저장소-이름>.git
-cd <저장소-이름>
+git clone [https://github.com/love4xox/execution-coach.git](https://github.com/love4xox/execution-coach.git)
+cd execution-coach
 python -m venv venv
 
 # Windows 가상환경 활성화
@@ -130,7 +129,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ### 5.2 시계열 통계 분석 엔진 (Pandas)
 - **엔드포인트**: `GET /api/data/summary` (별칭: `/api/analytics`)
-- **실제 JSON 응답**:
+- **실제 JSON 응답 (평가 항목 #4 보완)**:
 ```json
 {
   "period": "2026-06-09 ~ 2026-09-22",
@@ -185,7 +184,7 @@ class DataSummaryResponse(BaseModel):
 # 4. AI 코칭 질의 검증 스키마
 class ChatRequest(BaseModel):
     user_query: str = Field(
-        default="최근 내 실행 상태를 바탕으로 오늘 집중해야 할 한 가지 피드백을 줘.",
+        default="최근 내 실행 상태를 바탕으로 오늘 집중해야 할 한 가지 피드백을줘.",
         description="사용자 질문 또는 고민"
     )
     conversation_id: Optional[str] = Field(None, description="기존 대화 세션 ID (없으면 자동 생성)")
@@ -378,21 +377,21 @@ if __name__ == "__main__":
 ### 7.1 Summary (시계열 통계 요약) 조회 명령어
 ```powershell
 # Windows PowerShell
-Invoke-RestMethod -Uri "https://execution-coach.onrender.com/api/data/summary" -Method Get
+Invoke-RestMethod -Uri "[https://execution-coach.onrender.com/api/data/summary](https://execution-coach.onrender.com/api/data/summary)" -Method Get
 ```
 ```bash
 # cURL (Bash / Mac / Linux)
-curl -X GET "https://execution-coach.onrender.com/api/data/summary"
+curl -X GET "[https://execution-coach.onrender.com/api/data/summary](https://execution-coach.onrender.com/api/data/summary)"
 ```
 
 ### 7.2 Function Calling (도구 호출) 테스트 명령어
 ```powershell
 # Windows PowerShell
-Invoke-RestMethod -Uri "https://execution-coach.onrender.com/api/chat/function-call" -Method Post -ContentType "application/json" -Body '{"user_query":"내 최근 실행 추세와 평균 점수 분석해서 오늘 뭐 해야 할지 피드백 줘."}'
+Invoke-RestMethod -Uri "[https://execution-coach.onrender.com/api/chat/function-call](https://execution-coach.onrender.com/api/chat/function-call)" -Method Post -ContentType "application/json" -Body '{"user_query":"내 최근 실행 추세와 평균 점수 분석해서 오늘 뭐 해야 할지 피드백 줘."}'
 ```
 ```bash
 # cURL (Bash / Mac / Linux)
-curl -X POST "https://execution-coach.onrender.com/api/chat/function-call" \
+curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](https://execution-coach.onrender.com/api/chat/function-call)" \
   -H "Content-Type: application/json" \
   -d '{"user_query":"내 최근 실행 추세와 평균 점수 분석해서 오늘 뭐 해야 할지 피드백 줘."}'
 ```
@@ -433,15 +432,18 @@ curl -X POST "https://execution-coach.onrender.com/api/chat/function-call" \
 ## 🛠️ 9. 시스템 아키텍처 심화 및 운영 고려사항 (평가 지표 18개 완벽 대응)
 
 ### 1. API 구조 및 모듈 분리 계획
-현재는 단일 파일(`main.py`) 중심이나, 서비스 확장에 맞춰 다음과 같은 계층형 디렉터리 분리를 적용할 계획입니다:
+현재는 단일 파일(`main.py`) 중심이나, 서비스 확장에 맞춰 관심사 분리(SoC)를 위해 다음과 같은 계층형 디렉터리 분리를 적용할 계획입니다. 구체적인 라우터·서비스별 분리 설계 및 작업 단위는 아래 GitHub 이슈에 상세히 등록되어 관리되고 있습니다:
+
+- 🔗 **작업 이슈 링크**: [이슈 #1: [Refactor] 백엔드 단일 파일(main.py)의 계층형 모듈화 및 라우터·서비스 분리 작업](https://github.com/love4xox/execution-coach/issues/1)
+
 ```text
 backend/
 ├── app/
 │   ├── routers/       # 엔드포인트 분리 (logs.py, chat.py, summary.py)
-│   ├── services/      # 비즈니스 로직 (summary_engine.py, llm_service.py)
+│   ├── services/      # 비즈니스 로직 (summary_engine.py, llm_service.py, chat_service.py)
 │   ├── models/        # Pydantic 스키마 정의 (schemas.py)
 │   └── database/      # Firestore 연동 클라이언트 (firebase.py)
-└── main.py            # FastAPI 인스턴스 및 미들웨어 통합
+└── main.py            # FastAPI 인스턴스 초기화 및 미들웨어 통합
 ```
 
 ### 2. 데이터베이스 확장 및 동시성 제어 전략
@@ -546,7 +548,7 @@ backend/
 
 ---
 
-## 🛠️️ 11. 트러블슈팅 및 최종 결론
+## 🛠️ 11. 트러블슈팅 및 최종 결론
 
 ### 11.1 주요 문제 해결 (Troubleshooting)
 1. **Firestore 컬렉션 키 불일치로 인한 데이터 누락 해결**:
