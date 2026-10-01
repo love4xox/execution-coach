@@ -89,7 +89,7 @@
 | `CORS_ORIGINS` | CORS 허용 도메인 (운영 배포 시 단일 지정 권장) | `https://execution-coach-25e5lk54b-mind-mate1.vercel.app` |
 | `PORT` | 백엔드 서버 구동 포트 | `10000` (Render 기본값) |
 
-> 🔒 **서비스 계정 키 보안 지침 (평가 항목 #14 보완)**: 로컬 환경의 `serviceAccountKey.json`은 `.gitignore`에 등록하여 Git 추적을 원천 차단했습니다. Render 배포 환경에서는 파일 자체 대신 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 Base64로 인코딩하여 주입하며, GCP 콘솔에서 Cloud Datastore 사용자 권한만 부여하여 **최소 권한의 원칙(Least Privilege)**을 준수합니다.
+> 🔒 **서비스 계정 키 보안 지침**: 로컬 환경의 `serviceAccountKey.json`은 `.gitignore`에 등록하여 Git 추적을 원천 차단했습니다. Render 배포 환경에서는 파일 자체 대신 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 Base64로 인코딩하여 주입하며, GCP 콘솔에서 Cloud Datastore 사용자 권한만 부여하여 **최소 권한의 원칙(Least Privilege)**을 준수합니다.
 
 ### 4.2 로컬 설치 및 Uvicorn 실행 명령어 코드
 ```bash
