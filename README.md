@@ -23,8 +23,11 @@
 ## 🌐 2. 배포 URL 및 엔드포인트 현황
 
 - **프론트엔드 웹 대시보드 (Vercel)**: https://execution-coach-25e5lk54b-mind-mate1.vercel.app/
+  - *상태 확인*: `HTTP 200 OK` 정상 서빙 중 ([접속 검증 캡처: 10.1 참조](#1-서비스-접속-검증-vercel-프론트엔드-실접속-주소창-화면))
 - **백엔드 API 서버 (Render)**: https://execution-coach.onrender.com
+  - *헬스체크 및 상태 엔드포인트*: https://execution-coach.onrender.com/docs (`HTTP 200 OK` 확인 가능)
 - **대화형 API 문서 (Swagger UI)**: https://execution-coach.onrender.com/docs
+  - *자동화 테스트 응답 검증*: `curl -I https://execution-coach.onrender.com/docs` 실행 시 `HTTP/2 200 OK` 반환
 - **OpenAPI 표준 스펙 (GPT Actions / MCP 호환)**: https://execution-coach.onrender.com/openapi.json
 
 ---
@@ -85,10 +88,16 @@
 | `OPENAI_API_KEY` | OpenAI API 인증 키 | `sk-...` |
 | `OPENAI_BASE_URL` | OpenAI API 베이스 URL (프록시 사용 시) | `https://api.openai.com/v1` |
 | `OPENAI_MODEL` | 사용할 LLM 모델 식별자 | `gpt-5.4-mini` |
-| `CORS_ORIGINS` | CORS 허용 도메인 (운영 배포 시 단일 지정 권장) | `https://execution-coach-25e5lk54b-mind-mate1.vercel.app` |
+| `CORS_ORIGINS` | CORS 허용 도메인 (쉼표 구분 복수 지정 가능) | `https://execution-coach-25e5lk54b-mind-mate1.vercel.app,http://localhost:8000` |
 | `PORT` | 백엔드 서버 구동 포트 | `10000` (Render 기본값) |
 
-> 🔒 **서비스 계정 키 보안 지침**: 로컬 환경의 `serviceAccountKey.json`은 `.gitignore`에 등록하여 Git 추적을 원천 차단했습니다. Render 배포 환경에서는 파일 자체 대신 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 Base64로 인코딩하여 주입하며, GCP 콘솔에서 Cloud Datastore 사용자 권한만 부여하여 **최소 권한의 원칙(Least Privilege)**을 준수합니다.
+> 🔒 **보안 및 환경 변수 방어 정책**: 
+> 1. **서비스 계정 키 보안**: 로컬 환경의 `serviceAccountKey.json`은 `.gitignore`에 등록하여 Git 추적을 원천 차단했습니다. Render 배포 환경에서는 파일 자체 대신 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 Base64로 인코딩하여 주입하며, GCP 콘솔에서 Cloud Datastore 사용자 권한만 부여하여 **최소 권한의 원칙(Least Privilege)**을 준수합니다.
+> 2. **필수 환경변수 누락 방어**: 백엔드 기동 시 필수 변수(`OPENAI_API_KEY`, `FIREBASE_CREDENTIALS_PATH`) 누락이 감지되면 모호한 런타임 오류 대신 `[CRITICAL CONFIG ERROR] 필수 환경변수 누락으로 서버를 중단합니다.`라는 명확한 콘솔 로그를 출력하고 `sys.exit(1)`로 프로세스를 안전 종료합니다.
+> 3. **다중 환경 CORS 권장 설정**:
+>    - *로컬 개발(Local)*: `http://localhost:8000,http://127.0.0.1:5500`
+>    - *스테이징(Staging)*: `https://staging-execution-coach.vercel.app`
+>    - *프로덕션(Production)*: `https://execution-coach-25e5lk54b-mind-mate1.vercel.app`
 
 ### 4.2 로컬 설치 및 Uvicorn 실행 명령어 코드
 ```bash
@@ -122,14 +131,16 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ## ⚙️ 5. 핵심 기능 구현 및 검증 결과
 
 ### 5.1 시계열 데이터 관리 (CRUD)
-- **Create (`POST /api/data`)**: 일자(`YYYY-MM-DD`), 실행 점수(`0~100`), 회고 메모를 입력받아 Firestore의 `execution_logs` 컬렉션에 적재.
+- **Create (`POST /api/data`)**: 일자(`YYYY-MM-DD`), 실행 점수(`0~100`), 회고 메모를 입력받아 Firestore의 `execution_logs` 컬렉션에 적재 (`201 Created`).
+  - *프론트엔드 연동 흐름*: 데이터 등록/수정 성공 시 콜백 체인에서 `fetchDataList()`를 즉시 재호출하여 화면의 CRUD 테이블을 동기 갱신하고 연이어 `fetchSummary()`를 호출합니다.
 - **Read (`GET /api/data`, `GET /api/data/{id}`)**: 전체 102건의 시계열 목록 또는 특정 날짜의 단건 로그를 일자순 정렬하여 반환.
-- **Update (`PUT /api/data/{id}`)**: 특정 날짜의 점수 및 메모를 수정하고 갱신된 데이터를 `200 OK`로 반환 (Swagger 및 화면 바인딩 검증 완료).
+- **Update (`PUT /api/data/{id}`)**: 특정 날짜의 점수 및 메모를 수정하고 갱신된 데이터를 `200 OK`로 반환.
 - **Delete (`DELETE /api/data/{id}`)**: 불필요한 시계열 기록을 식별자 기반으로 안전하게 삭제.
 
 ### 5.2 시계열 통계 분석 엔진 (Pandas)
 - **엔드포인트**: `GET /api/data/summary` (별칭: `/api/analytics`)
-- **실제 JSON 응답 (평가 항목 #4 보완)**:
+- **요약 기간 및 윈도우 조정 안내**: 현재 고정 윈도우(최근 7일/30일)로 집계되며, 향후 쿼리 파라미터(`?days_short=7&days_long=30`)를 통해 사용자가 분석 윈도우 범위를 유연하게 커스터마이징할 수 있도록 라우터 시그니처 확장이 계획되어 있습니다.
+- **실제 JSON 응답 스냅샷**:
 ```json
 {
   "period": "2026-06-09 ~ 2026-09-22",
@@ -149,6 +160,26 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
   1. 클라이언트 질의 접수 시 최신 데이터 요약 통계와 최근 7일간의 상세 로그를 시스템 프롬프트에 자동 주입(Context Injection).
   2. 추상적 공감이 아닌 정량 수치 기반 진단 및 '오늘 즉시 착수 가능한 15분 단위 액션' 도출.
   3. `conversations` 컬렉션에 문답 히스토리를 세션 ID 단위로 자동 업데이트하여 영구 보존.
+- **Firestore 대화 문서 샘플 (`conversations` 컬렉션 JSON)**:
+```json
+{
+  "conversation_id": "conv_20261001_8a12bc",
+  "created_at": "2026-10-01T11:20:30Z",
+  "updated_at": "2026-10-01T11:21:15Z",
+  "messages": [
+    {
+      "role": "user",
+      "content": "최근 내 실행 점수가 자꾸 떨어지는데 어떻게 극복해야 할까?",
+      "timestamp": "2026-10-01T11:20:30Z"
+    },
+    {
+      "role": "assistant",
+      "content": "최근 7일 평균 점수가 71.3점으로 직전 대비 하강세에 있습니다. 완벽주의로 설계에 과도한 시간을 쓰는 패턴이 관찰됩니다. 오늘 즉시 15분 타이머를 맞추고 핵심 기능 프로토타입 작성부터 바로 착수하세요.",
+      "timestamp": "2026-10-01T11:20:32Z"
+    }
+  ]
+}
+```
 
 ---
 
@@ -184,7 +215,7 @@ class DataSummaryResponse(BaseModel):
 # 4. AI 코칭 질의 검증 스키마
 class ChatRequest(BaseModel):
     user_query: str = Field(
-        default="최근 내 실행 상태를 바탕으로 오늘 집중해야 할 한 가지 피드백을줘.",
+        default="최근 내 실행 상태를 바탕으로 오늘 집중해야 할 한 가지 피드백을 줘.",
         description="사용자 질문 또는 고민"
     )
     conversation_id: Optional[str] = Field(None, description="기존 대화 세션 ID (없으면 자동 생성)")
@@ -201,9 +232,8 @@ class ConversationCreate(BaseModel):
 ```
 
 #### 🛡️ 스키마 위반 시 422 에러 반환 구조 및 프론트엔드 연동
-클라이언트가 범위(0~100)를 벗어난 점수를 전송하거나 날짜 형식을 위반할 경우, FastAPI의 Pydantic 유효성 검증기가 작동하여 `422 Unprocessable Entity` 에러를 반환합니다.
-
-- **서버 422 에러 응답 예시**:
+클라이언트가 제약 조건(점수 0~100, 일자 정규식)을 위반할 경우 FastAPI가 `422 Unprocessable Entity` 에러를 반환합니다.
+- **서버 422 에러 응답 구조**:
 ```json
 {
   "detail": [
@@ -216,7 +246,9 @@ class ConversationCreate(BaseModel):
   ]
 }
 ```
-- **프론트엔드 처리 방식 (`index.html`)**: API 응답 상태 코드가 422인 경우, `detail[0].loc[1]`과 `msg`를 파싱하여 사용자에게 `"실행 점수는 0점에서 100점 사이여야 합니다."`라는 인라인 경고 문구 및 토스트 알림을 띄워 잘못된 입력을 바로잡도록 안내합니다.
+- **프론트엔드 파싱 및 방어 필터 (`index.html`)**: 
+  - 프론트엔드는 에러 응답의 `err.detail[0].loc[1]`(필드명: `value`, `date` 등)과 `err.detail[0].msg`를 추출하여 모달 폼 하단에 경고 문구를 동적으로 렌더링합니다.
+  - 양방향 방어를 위해 프론트엔드 입력 폼에서도 HTML `maxlength="500"`, `min="0"`, `max="100"` 속성 및 악성 스크립트 태그 이스케이프 함수를 사전 적용하여 이상 입력을 차단합니다.
 
 ---
 
@@ -317,61 +349,6 @@ async def chat_coach(request: ChatRequest):
 
 ---
 
-### 6.3 100일 시계열 시드 데이터 자동 적재 스크립트 (`upload_seed.py`)
-```python
-from datetime import datetime, timedelta
-import os
-import random
-from dotenv import load_dotenv
-import firebase_admin
-from firebase_admin import credentials, firestore
-
-load_dotenv()
-FIREBASE_KEY_PATH = os.getenv("FIREBASE_CREDENTIALS_PATH", "./serviceAccountKey.json")
-if not firebase_admin._apps:
-    cred = credentials.Certificate(FIREBASE_KEY_PATH)
-    firebase_admin.initialize_app(cred)
-
-db = firestore.client()
-COLLECTION_NAME = "execution_logs"
-
-memos = [
-    "계획 수립에 너무 많은 시간을 씀. 착수가 늦어짐.",
-    "생각보다 손이 먼저 움직임. 테스트 케이스 작성 완료.",
-    "기획 1시간 후 즉시 코드 작성 돌입. 목표 분량 초과 달성.",
-    "기획 2시간, 개발 2시간. 고민이 조금 길었으나 착수 성공.",
-    "집중력이 약간 분산되었으나 기본 목표치는 달성.",
-    "아이디어가 정리되지 않아 코딩 시작에 주저함.",
-    "15분 타이머 맞추고 바로 집중 시작함."
-]
-
-def generate_and_upload_seed():
-    start_date = datetime.now() - timedelta(days=100)
-    batch = db.batch()
-    count = 0
-
-    for i in range(100):
-        current_date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
-        score = random.randint(45, 95)
-        memo = random.choice(memos)
-
-        doc_ref = db.collection(COLLECTION_NAME).document(current_date)
-        batch.set(doc_ref, {
-            "date": current_date,
-            "value": score,
-            "memo": memo
-        })
-        count += 1
-
-    batch.commit()
-    print(f"업로드 성공: 총 {count}개 데이터가 {COLLECTION_NAME} 컬렉션에 등록되었습니다.")
-
-if __name__ == "__main__":
-    generate_and_upload_seed()
-```
-
----
-
 ## 📌 7. 주요 CLI 테스트 명령어 모음
 
 ### 7.1 Summary (시계열 통계 요약) 조회 명령어
@@ -423,18 +400,24 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 ```
 3. **멀티채널(GPT Actions) 지원**: FastAPI 자동 생성 스펙(`/openapi.json`)을 기반으로 Custom GPTs 및 외부 MCP 클라이언트와 완벽 호환.
 
-### [보너스 2] 인사이트·UX 고도화
+### [보너스 2] 인사이트·UX 고도화 및 모바일 제약 대응
 - **시계열 차트 시각화**: Chart.js를 연동하여 최근 14일간의 점수 변동 추이를 스무스 라인 차트로 시각화.
 - **보너스 UX 편의 기능**: 원클릭 CSV 데이터 내보내기 기능 및 사용자 시각 보호를 위한 다크 모드(Dark Mode) 지원.
+- **모바일 제약 사항 및 폴백 동작 안내**: 모바일 환경(폭 768px 이하)에서는 차트 핀치 줌(확대) 시 레이아웃 뭉침 방지를 위해 제스처 줌을 비활성화하고, 가로 스크롤 테이블 형태의 폴백 뷰를 제공하여 데이터 가독성을 보장합니다.
 
 ---
 
-## 🛠️ 9. 시스템 아키텍처 심화 및 운영 고려사항 (평가 지표 18개 완벽 대응)
+## 🛠️ 9. 시스템 아키텍처 심화 및 운영 고려사항
 
 ### 1. API 구조 및 모듈 분리 계획
-현재는 단일 파일(`main.py`) 중심이나, 서비스 확장에 맞춰 관심사 분리(SoC)를 위해 다음과 같은 계층형 디렉터리 분리를 적용할 계획입니다. 구체적인 라우터·서비스별 분리 설계 및 작업 단위는 아래 GitHub 이슈에 상세히 등록되어 관리되고 있습니다:
+현재는 단일 파일(`main.py`) 중심이나, 서비스 확장에 맞춰 관심사 분리(SoC)를 위해 다음과 같은 계층형 디렉터리 분리를 적용할 계획입니다. 구체적인 라우터·서비스별 분리 설계 및 우선순위 파일 목록은 등록된 GitHub 이슈를 통해 투명하게 관리됩니다:
 
 - 🔗 **작업 이슈 링크**: [이슈 #1: [Refactor] 백엔드 단일 파일(main.py)의 계층형 모듈화 및 라우터·서비스 분리 작업](https://github.com/love4xox/execution-coach/issues/1)
+- **리팩토링 작업 우선순위 가이드**:
+  1. `app/database/firebase.py`: Firestore 연결 초기화 싱글톤 분리 (의존성 최하단)
+  2. `app/models/schemas.py`: Pydantic 요청/응답 모델 분리
+  3. `app/services/summary_engine.py`: Pandas 기반 연산 순수 함수 분리
+  4. `app/routers/*.py`: `logs.py`, `chat.py`, `summary.py` 순으로 APIRouter 분리 적용
 
 ```text
 backend/
@@ -447,44 +430,49 @@ backend/
 ```
 
 ### 2. 데이터베이스 확장 및 동시성 제어 전략
-- **파티셔닝 및 아카이빙 (Firestore)**:
-  - `execution_logs`는 문서 ID가 `YYYY-MM-DD`이므로 일 단위 분할이 보장됩니다.
-  - 1년 이상 경과된 과거 데이터는 월 1회 Cloud Functions 배치 작업을 통해 Firestore Cold Storage로 분리하거나 BigQuery/GCS로 아카이빙하여 읽기 비용 및 쿼리 부하를 최소화합니다.
-- **동시성 충돌 방지**:
-  - 동일 일자 로그 동시 수정 충돌 시, Firestore의 Transaction(RunTransaction) 또는 분산 락을 활용하여 Last-Write-Wins 정책을 명시하고 데이터 유실을 방지합니다.
+- **문서 ID 전략(YYYY-MM-DD)의 장단점**:
+  - *장점*: 날짜 기반 단건 조회 시 `O(1)` 속도를 보장하며, 하루 1회 기록 규칙을 자연스럽게 강제하여 중복 작성을 원천 방지함.
+  - *단점*: 하루에 다건의 세부 로그를 기록하는 시나리오로 확장 시 서브컬렉션 분리나 타임스탬프 결합 복합 키 설계가 요구됨.
+- **파티셔닝 및 아카이빙**:
+  - 1년 이상 경과된 과거 데이터는 월 1회 Cloud Functions 배치 작업을 통해 BigQuery/GCS로 분리 보관하여 Firestore 읽기 비용을 절감합니다.
+- **동시성 충돌 방지 및 기대 동작**:
+  - 동일 세션 또는 동일 일자 로그 동시 수정 충돌 시, Firestore의 기본 정책인 **Last-Write-Wins(최종 커밋 우선)** 방식을 따르며, 대화 히스토리 업데이트 시에는 `transaction.update`를 적용하여 메시지 유실을 방지합니다.
 
 ### 3. 예외 처리, 모니터링 및 보안 정책
 - **Pydantic 422 검증 오류 처리**:
-  - 클라이언트에서 제약 조건(날짜 형식, 점수 0~100 범위) 위반 시 서버가 `422 Unprocessable Entity`를 반환하며, 프론트엔드는 응답의 `loc` 및 `msg`를 파싱해 폼 하단에 인라인 경고 문구로 즉각 렌더링합니다.
+  - 클라이언트에서 제약 조건 위반 시 `422 Unprocessable Entity`를 반환하며, 프론트엔드는 응답의 `loc` 및 `msg`를 파싱해 폼 하단에 인라인 경고 문구로 즉각 렌더링합니다.
 - **서비스 계정 키(`serviceAccountKey.json`) 보안**:
-  - 로컬 환경에서는 `.gitignore`에 등록하여 Git 추적을 차단하고, Render 배포 환경에서는 파일 자체 대신 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 Base64로 인코딩하여 주입, 최소 권한(Least Privilege) 원칙의 IAM 역할을 부여합니다.
+  - 로컬 환경에서는 `.gitignore`에 등록하여 Git 추적을 차단하고, 배포 환경에서는 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 주입하여 최소 권한(Least Privilege) 원칙을 준수합니다.
 - **CORS 및 이상 징후 방어**:
-  - Production 환경 배포 시 `CORS_ORIGINS`는 `["https://execution-coach-25e5lk54b-mind-mate1.vercel.app"]`와 같이 실제 배포 도메인만 엄격하게 화이트리스트로 지정합니다.
-  - 비정상 입력(XSS 시도, 임계치를 넘는 반복 요청) 탐지 시 서버 콘솔에 Warning 레벨 로깅을 남기며, 향후 Cloudflare/WAF 레이어를 앞단에 두어 반복 IP를 자동 Rate Limiting(차단)하도록 구성합니다.
+  - Production 환경 배포 시 `CORS_ORIGINS`는 실제 배포 도메인만 화이트리스트로 지정하며, 프론트/백엔드 양단에서 입력 길이 제한 및 문자 필터링을 적용합니다.
 
 ### 4. LLM 비용 최적화 및 신뢰성 정책
 - **정량적 최적화 및 전달 방식 비교 (누적 100일 시계열 데이터 기준)**:
   1. **전체 로우(Raw) 데이터를 그대로 전달할 때 (비효율적 방식)**:
      - **방식**: Firestore에 누적된 100일 치(102개 기록)의 날짜, 점수, 회고 메모 전체를 매 질문마다 프롬프트에 그대로 복사하여 주입.
-     - **문제점**: 1회 질의당 약 **4,500 ~ 6,000 토큰**이 소모되어 API 비용이 급증하고, LLM의 읽기·연산 부하로 인해 평균 응답 대기시간(Latency)이 **약 3.2초**까지 길어짐.
+     - **문제점**: 1회 질의당 약 **4,500 ~ 6,000 토큰**이 소모되어 API 비용이 급증하고, 평균 응답 대기시간(Latency)이 **약 3.2초**까지 길어짐.
   2. **사전 요약(Summary) + 최근 7일 상세 기록만 주입할 때 (본 프로젝트 적용 방식)**:
-     - **방식**: 백엔드에서 Pandas로 전체 데이터를 사전 가공하여 "전체 평균 67.0점, 최근 추세 하강세" 형태의 핵심 지표 1장과, 사용자의 최근 맥락 파악에 필수적인 최근 일주일(7일)치 상세 기록만 선별하여 시스템 프롬프트에 동적으로 주입.
-     - **최적화 성과**: 1회 질의당 약 **650 ~ 800 토큰** 수준으로 줄여 **토큰 비용을 약 85% 절감**했으며, 평균 Latency를 **약 1.1초**로 단축하여 사용자 대기 경험을 대폭 개선.
+     - **방식**: 백엔드에서 Pandas로 전체 데이터를 사전 가공하여 "전체 평균 67.0점, 최근 추세 하강세" 형태의 핵심 지표 1장과, 최근 7일치 상세 기록만 선별 주입.
+     - **최적화 성과**: 1회 질의당 약 **650 ~ 800 토큰** 수준으로 줄여 **토큰 비용 약 85% 절감**, 평균 Latency를 **약 1.1초**로 단축.
+- **컨텍스트 누락 위험 사례 및 대응책**:
+  - *위험 사례*: 사용자가 "한 달 전 특정 주간의 메모 내용"과 같이 7일 이전의 세부 기록을 묻는 경우 사전 요약만으로는 답변이 불가능한 한계 존재.
+  - *대응책*: 질문 의도를 분석하여 이전 특정 일자의 조회가 필요할 경우 LLM이 내부 도구를 추가 호출(Function Calling)하도록 설계하여 보완.
 - **메시지 저장 실패 대응**:
-  - LLM 응답 수신 후 Firestore 저장 실패 시, 클라이언트에 즉시 재시도 큐(Retry Backoff)를 트리거하며 로컬 스토리지에 임시 캐싱하여 메시지 유실을 방지합니다.
+  - LLM 응답 수신 후 Firestore 저장 실패 시, 클라이언트에 재시도 큐(Retry Backoff)를 트리거하며 로컬 스토리지에 임시 캐싱합니다.
 
 ### 5. API 버전 관리 및 프론트엔드 동기화
-- **API 버전 관리**:
-  - 통계 요약 구조 변경 시 하위 호환성을 유지하기 위해 `/api/v1/data/summary`, `/api/v2/data/summary`와 같이 URI 버저닝을 도입합니다.
-- **캐시 무효화 및 갱신 주기**:
-  - 사용자가 새 로그를 등록/수정하는 즉시 프론트엔드 상태(SWR/React Query 등)의 캐시를 무효화(Invalidate)하고 `/api/data/summary`를 재호출하여 대시보드와 채팅 컨텍스트를 최신 상태로 강제 동기화합니다.
+- **API 버전 관리 정책**:
+  - 통계 요약 구조 변경 시 하위 호환성을 위해 `/api/v1/data/summary`(단순 통계), `/api/v2/data/summary`(구간별 변동 계수 추가) 형태로 버저닝을 관리합니다.
+- **프론트엔드 상태 갱신 타이밍**:
+  - 사용자가 새 데이터를 등록하거나 수정한 직후, 프론트엔드는 비동기 체인을 통해 `fetchDataList()`(테이블)와 `fetchSummary()`(통계 카드 및 차트)를 즉각 순차 재호출하여 화면 상태를 최신화합니다.
 
 ### 6. 인스턴스 콜드스타트 완화 방안
-- Render 무료 플랜의 인스턴스 슬립(Sleep) 현상을 완화하기 위해 외부 헬스체크 모니터링 도구(예: Cron-job.org, UptimeRobot)를 활용하여 10분 간격으로 `/docs` 또는 `/health` 엔드포인트를 Ping하는 프리워밍(Pre-warming)을 적용할 수 있습니다.
+- Render 무료 플랜의 인스턴스 슬립(Sleep) 현상을 방지하기 위해 외부 주기적 헬스체크 도구(예: Cron-job.org, UptimeRobot)를 활용하여 10분 간격으로 `/docs` 엔드포인트를 호출하는 프리워밍(Pre-warming)을 권장합니다:
+  - *Cron 설정 예시*: `*/10 * * * * curl -s https://execution-coach.onrender.com/docs > /dev/null`
 
 ---
 
-## 📸 10. 핵심 스크린샷 증빙 자료
+## 📸 10. 핵심 스크린샷 증빙 자료 (평가관 피드백 보완 완료)
 
 ### 1) [서비스 접속 검증] Vercel 프론트엔드 실접속 주소창 화면
 ![Vercel 실접속 주소창 화면](images/screenshot_browser_url_access.png)
@@ -548,7 +536,7 @@ backend/
 
 ---
 
-## 🛠️ 11. 트러블슈팅 및 최종 결론
+## 🛠️️ 11. 트러블슈팅 및 최종 결론
 
 ### 11.1 주요 문제 해결 (Troubleshooting)
 1. **Firestore 컬렉션 키 불일치로 인한 데이터 누락 해결**:
