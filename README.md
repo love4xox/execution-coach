@@ -60,7 +60,7 @@
 - **대화형 API 문서 (Swagger UI)**: https://execution-coach.onrender.com/docs
   - *자동화 테스트 응답 검증*: `curl -I https://execution-coach.onrender.com/docs` 실행 시 `HTTP/2 200 OK` 반환
 - **OpenAPI 표준 스펙 (GPT Actions / MCP 호환)**: https://execution-coach.onrender.com/openapi.json
-- **클라우드 데이터베이스 콘솔 (Firebase Console)**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach/firestore)
+- **클라우드 데이터베이스 콘솔 (Firebase Console)**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach-d8d9f/overview)
   - *데이터베이스 관리*: Cloud Firestore (`execution_logs`, `conversations`) 실시간 데이터 적재 현황 모니터링 대시보드
 
 ---
@@ -444,7 +444,7 @@ if __name__ == "__main__":
 
 ## 🗄️ 8. 데이터베이스 아키텍처 및 적재 무결성 검증 (Firestore)
 
-- **Firebase 콘솔 바로가기**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach/firestore)
+- **Firebase 콘솔 바로가기**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach-d8d9f/overview)
 
 ### 8.1 Firebase Cloud Firestore 콘솔 적재 스냅샷
 
