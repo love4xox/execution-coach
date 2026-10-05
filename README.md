@@ -47,19 +47,21 @@
 #### 🔹 Phase 5: 성능 최적화 및 문서화 `(2026.09.28 - 10.01)`
 - [x] 사전 통계 요약 주입 방식을 통한 LLM 토큰/비용 약 85% 절감 달성
 - [x] 백엔드 단일 파일 계층형 모듈화 작업 이슈 등록 ([GitHub Issue #1](https://github.com/love4xox/execution-coach/issues/1))
-- [x] 20종 검증 증빙 스크린샷 맵핑 및 프로덕션 규격 기술 문서 완성
+- [x] 21종 검증 증빙 스크린샷 맵핑 및 프로덕션 규격 기술 문서 완성
 
 ---
 
 ## 🌐 3. 배포 URL 및 엔드포인트 현황
 
 - **프론트엔드 웹 대시보드 (Vercel)**: https://execution-coach-25e5lk54b-mind-mate1.vercel.app/
-  - *상태 확인*: `HTTP 200 OK` 정상 서빙 중 ([접속 검증 캡처: 11.1 참조](#1-서비스-접속-검증-vercel-프론트엔드-실접속-주소창-화면))
+  - *상태 확인*: `HTTP 200 OK` 정상 서빙 중 ([접속 검증 캡처: 12.1 참조](#1-서비스-접속-검증-vercel-프론트엔드-실접속-주소창-화면))
 - **백엔드 API 서버 (Render)**: https://execution-coach.onrender.com
   - *헬스체크 및 상태 엔드포인트*: https://execution-coach.onrender.com/docs (`HTTP 200 OK` 확인 가능)
 - **대화형 API 문서 (Swagger UI)**: https://execution-coach.onrender.com/docs
   - *자동화 테스트 응답 검증*: `curl -I https://execution-coach.onrender.com/docs` 실행 시 `HTTP/2 200 OK` 반환
 - **OpenAPI 표준 스펙 (GPT Actions / MCP 호환)**: https://execution-coach.onrender.com/openapi.json
+- **클라우드 데이터베이스 콘솔 (Firebase Console)**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach/firestore)
+  - *데이터베이스 관리*: Cloud Firestore (`execution_logs`, `conversations`) 실시간 데이터 적재 현황 모니터링 대시보드
 
 ---
 
@@ -138,21 +140,23 @@
 # 1. 저장소 복제 및 가상환경 설정
 git clone [https://github.com/love4xox/execution-coach.git](https://github.com/love4xox/execution-coach.git)
 cd execution-coach
+
+# 1. 파이썬 가상환경 생성
 python -m venv venv
 
-# Windows 가상환경 활성화
+# 2. 가상환경 활성화 (Windows PowerShell 기준)
 .\venv\Scripts\activate
-# Mac / Linux 가상환경 활성화
-# source venv/bin/activate
+# (만약 권한 에러가 나면 Set-ExecutionPolicy Unrestricted -Scope Process 실행 후 재시도)
+# Mac / Linux 가상환경 활성화: source venv/bin/activate
 
-# 2. 필수 라이브러리 설치
+# 3. 필수 패키지 일괄 설치
 pip install -r requirements.txt
 
-# 3. 100일 시계열 데이터 생성 및 업로드
+# 4. 100일 시계열 데이터 생성 및 업로드
 python generate_seed.py
 python upload_seed.py
 
-# 4. Uvicorn 로컬 개발 서버 구동 (코드 변경 시 자동 재로드: --reload)
+# 5. Uvicorn 로컬 개발 서버 구동 (코드 변경 시 자동 재로드: --reload)
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 # [참고] Render 클라우드 프로덕션 배포 시 Uvicorn 구동 명령어
@@ -166,7 +170,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ### 6.1 시계열 데이터 관리 (CRUD)
 - **Create (`POST /api/data`)**: 일자(`YYYY-MM-DD`), 실행 점수(`0-100`), 회고 메모를 입력받아 Firestore의 `execution_logs` 컬렉션에 적재 (`201 Created`).
-  - *프론트엔드 연동 흐름*: 데이터 등록/수정 성공 시 콜백 체인에서 `fetchDataList()`를 즉시 재호출하여 화면의 CRUD 테이블을 동기 갱신하고 연이어 `fetchSummary()`를 호출합니다[cite: 1].
+  - *프론트엔드 연동 흐름*: 데이터 등록/수정 성공 시 콜백 체인에서 `fetchDataList()`를 즉시 재호출하여 화면의 CRUD 테이블을 동기 갱신하고 연이어 `fetchSummary()`를 호출합니다.
 - **Read (`GET /api/data`, `GET /api/data/{id}`)**: 전체 102건의 시계열 목록 또는 특정 날짜의 단건 로그를 일자순 정렬하여 반환.
 - **Update (`PUT /api/data/{id}`)**: 특정 날짜의 점수 및 메모를 수정하고 갱신된 데이터를 `200 OK`로 반환 (Swagger 및 화면 바인딩 검증 완료).
 - **Delete (`DELETE /api/data/{id}`)**: 불필요한 시계열 기록을 식별자 기반으로 안전하게 삭제.
@@ -438,9 +442,78 @@ if __name__ == "__main__":
 
 ---
 
-## 📌 8. 주요 CLI 테스트 명령어 모음
+## 🗄️ 8. 데이터베이스 아키텍처 및 적재 무결성 검증 (Firestore)
 
-### 8.1 Summary (시계열 통계 요약) 조회 명령어
+- **Firebase 콘솔 바로가기**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach/firestore)
+
+### 8.1 Firebase Cloud Firestore 콘솔 적재 스냅샷
+
+#### 1) 시계열 실행 로그 컬렉션 (`execution_logs`)
+![Firestore execution_logs 적재 화면](images/screenshot_firestore_execution_logs.png)
+
+#### 2) AI 코칭 대화 세션 아카이브 컬렉션 (`conversations`)
+![Firestore conversations 적재 화면](images/screenshot_firestore_conversations.png)
+
+#### 3) 트러블슈팅 증빙: 레거시 단건 참조 컬렉션 (`data`)
+![Firestore 레거시 data 컬렉션 증빙](images/screenshot_troubleshooting_legacy_data_collection.png)
+
+---
+
+### 8.2 시계열 적재 현황 및 데이터 무결성 심층 분석
+
+#### 1) 검증 의의 및 프로덕션 DB 적재 상태
+- **실시간 콘솔 검증**: Google Cloud Firebase Firestore 콘솔([execution-coach 콘솔](https://console.firebase.google.com/project/execution-coach/firestore))을 통해 `execution_logs` 컬렉션에 100일 이상의 시계열 실행 데이터(총 102건)와 `conversations` 컬렉션의 세션별 대화 히스토리가 단 한 건의 결손 없이 완전하게 적재되어 있음을 입증하는 가장 직관적이고 확실한 데이터베이스 증빙 자료입니다.
+- **단절 없는 시계열 파이프라인**: `generate_seed.py` 및 `upload_seed.py`를 통해 생성된 시드 데이터가 Firestore 배치 트랜잭션을 거쳐 클라우드 NoSQL 상에 안정적으로 영속화되었음을 입증합니다.
+
+#### 2) 컬렉션별 구조 및 책임 분리 (Separation of Concerns)
+- **`execution_logs` (시계열 수치 로그 컬렉션)**:
+  - **목적**: 매일의 실행 점수와 고민 메모를 누적 추적하고, Pandas 분석 엔진의 원천 데이터로 활용하기 위한 전용 저장소입니다.
+  - **플랫(Flat) 구조 설계**: 문서 내부에 불필요한 중첩 객체나 가변 서브컬렉션을 배제한 1계층 플랫 구조로 설계하여, 통계 산출 시 100건 이상의 전체 문서를 스트리밍(`stream()`)하고 DataFrame으로 변환하는 속도를 극대화했습니다.
+- **`conversations` (대화 세션 아카이브 컬렉션과의 분리 이유)**:
+  - 대화 데이터는 세션 ID를 기준으로 가변적인 문답 메시지 배열(`messages: [ {role, content, timestamp} ]`)이 지속적으로 누적되는 구조입니다.
+  - 만약 시계열 수치 로그와 대화 히스토리를 단일 컬렉션에 혼합할 경우, 일일 통계 계산 시 대용량 텍스트 페이로드로 인해 Firestore 네트워크 대역폭 및 읽기 비용이 급증하게 됩니다.
+  - 따라서 두 도메인을 물리적 컬렉션으로 완전히 분리함으로써 **통계 연산의 가벼움**과 **대화 세션 복원의 편의성**을 동시에 달성했습니다.
+
+#### 3) 문서 ID 전략 (Document ID: `YYYY-MM-DD`) 및 조회 패턴 최적화
+- **상수 시간 $O(1)$ 단건 조회 보장**:
+  - Auto-generated ID(임의의 해시 문자열) 대신 일자 포맷(`YYYY-MM-DD`)을 고유 Document ID로 지정했습니다.
+  - 클라이언트가 특정 날짜의 기록을 조회하거나 수정할 때(`GET/PUT /api/data/2026-06-10`), 복잡한 복합 인덱스 스캔이나 `where("date", "==", ...)` 필터링 없이 `db.collection('execution_logs').document('YYYY-MM-DD')` 경로 지정을 통해 **$O(1)$의 즉각적인 단건 접근(Point Read)**이 가능합니다.
+- **DB 레벨의 중복 등록 원천 차단 (Unique Key 강제)**:
+  - '하루에 한 번만 실행 점수를 기록한다'는 비즈니스 룰을 애플리케이션 코드가 아닌 NoSQL의 Document ID 레벨에서 물리적으로 강제합니다.
+  - 동일 날짜에 대한 중복 제출이나 배치 업로드 재실행 시에도 새로운 문서가 중복 생성되지 않고 기존 일자 문서에 원자적으로 덮어씌워지므로(Idempotency), 데이터 왜곡을 사전에 방지합니다.
+
+#### 4) 적재 필드 명세 및 데이터 무결성 보장
+모든 문서는 Pydantic 검증 모델(`ExecutionLogCreate`, `ConversationCreate`)과 1:1로 일치하는 일관된 스키마를 엄격히 유지합니다:
+
+- **`execution_logs` 컬렉션 스키마**:
+  | 필드명 | 데이터 타입 | 제약 조건 및 스키마 명세 | 실제 적재 데이터 예시 |
+  | :--- | :---: | :--- | :--- |
+  | `date` | `string` | ISO 8601 일자 규격 정규식 (`^\d{4}-\d{2}-\d{2}$`) 준수 | `"2026-06-10"` |
+  | `value` | `number (integer)` | 정수형 점수 범위 제한 (`0 <= value <= 100`) | `74` |
+  | `memo` | `string` | 실행 회고 및 고민 메모 (`1자 이상 500자 이하`) | `"아키텍처 구조 생각하느라 초반 지연, 이후 구현 완료."` |
+
+- **`conversations` 컬렉션 스키마**:
+  | 필드명 | 데이터 타입 | 제약 조건 및 스키마 명세 | 실제 적재 데이터 예시 |
+  | :--- | :---: | :--- | :--- |
+  | `id` | `string` | 고유 대화 세션 식별자 Key | `"8256675e"` |
+  | `title` | `string` | 사용자 첫 질의 기반 자동 요약 타이틀 | `"보고서를 작성해야 하는데 어떻게 써야 할지 막..."` |
+  | `created_at` / `updated_at` | `string` | ISO 8601 생성 및 갱신 UTC 타임스탬프 | `"2026-09-22T02:09:14.755639"` |
+  | `messages` | `array[map]` | `role` (`user`/`assistant`), `content`, `timestamp` 배열 구조 | `[ { role: "user", ... }, { role: "assistant", ... } ]` |
+
+#### 5) 배치 트랜잭션(Batch Write)을 통한 대량 적재 무결성
+- 단건 호출 방식 대신 Firebase Admin SDK의 `db.batch()`를 적용하여 100일간의 시드 데이터를 **단일 원자적 커밋(Atomic Commit)**으로 Firestore에 일괄 적재했습니다.
+- 이를 통해 네트워크 지연(Latency)을 최소화하고, 적재 도중 네트워크 끊김이나 예외가 발생하더라도 부분 적재로 인한 데이터 결손이 발생하지 않도록 트랜잭션 무결성을 완벽하게 보장했습니다.
+
+#### 6) 트러블슈팅 분석: 초기 `data` 컬렉션 단건 격리 이슈 해결
+- **오류 현상**: 초기 프론트엔드 연동 테스트 당시, 전체 100건 이상의 시드 데이터가 있음에도 화면에는 단 1건만 노출되는 데이터 단절 문제가 발생했습니다.
+- **원인 규명**: 시드 데이터 적재 스크립트는 `execution_logs` 컬렉션에 데이터를 저장했으나, 초기 백엔드 API 소스코드(`main.py`)가 `DATA_COLLECTION = "data"`를 참조하도록 작성되어 있어 신규 등록된 단 1건의 문서(`2026-09-21`, 점수 88점)만 격리된 채 조회되었던 상태였습니다.
+- **해결 및 정합성 확보**: 백엔드의 타깃 상수를 `DATA_COLLECTION = "execution_logs"`로 통일하고 원격 배포를 갱신함으로써, 100일 시드 데이터와 신규 등록 데이터가 결합된 총 102건의 완전한 시계열 파이프라인 정합성을 달성했습니다.
+
+---
+
+## 📌 9. 주요 CLI 테스트 명령어 모음
+
+### 9.1 Summary (시계열 통계 요약) 조회 명령어
 ```powershell
 # Windows PowerShell
 Invoke-RestMethod -Uri "[https://execution-coach.onrender.com/api/data/summary](https://execution-coach.onrender.com/api/data/summary)" -Method Get
@@ -450,7 +523,7 @@ Invoke-RestMethod -Uri "[https://execution-coach.onrender.com/api/data/summary](
 curl -X GET "[https://execution-coach.onrender.com/api/data/summary](https://execution-coach.onrender.com/api/data/summary)"
 ```
 
-### 8.2 Function Calling (도구 호출) 테스트 명령어
+### 9.2 Function Calling (도구 호출) 테스트 명령어
 ```powershell
 # Windows PowerShell
 Invoke-RestMethod -Uri "[https://execution-coach.onrender.com/api/chat/function-call](https://execution-coach.onrender.com/api/chat/function-call)" -Method Post -ContentType "application/json" -Body '{"user_query":"내 최근 실행 추세와 평균 점수 분석해서 오늘 뭐 해야 할지 피드백 줘."}'
@@ -464,7 +537,7 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 
 ---
 
-## 🌟 9. 보너스 과제 구현 및 검증 내역
+## 🌟 10. 보너스 과제 구현 및 검증 내역
 
 ### [보너스 1] AI 도구 호출 (Function Calling) & 멀티채널 연동
 1. **도구 호출 근거**: 사용자가 통계적 진단을 요구할 때 환각 없이 DB의 실시간 지표를 조회하도록 `get_data_summary` Function Calling 도구 스키마를 정의하고 백엔드에 바인딩.
@@ -496,7 +569,7 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
 
 ---
 
-## 🛠️ 10. 시스템 아키텍처 심화 및 운영 고려사항
+## 🛠️ 11. 시스템 아키텍처 심화 및 운영 고려사항
 
 ### 1. API 구조 및 모듈 분리 계획
 현재는 단일 파일(`main.py`) 중심이나, 서비스 확장에 맞춰 관심사 분리(SoC)를 위해 다음과 같은 계층형 디렉터리 분리를 적용할 계획입니다. 구체적인 라우터·서비스별 분리 설계 및 우선순위 파일 목록은 등록된 GitHub 이슈를 통해 투명하게 관리됩니다:
@@ -519,9 +592,9 @@ backend/
 ```
 
 ### 2. 데이터베이스 확장 및 동시성 제어 전략
-- **문서 ID 전략(YYYY-MM-DD)의 장단점**:
-  - *장점*: 날짜 기반 단건 조회 시 `O(1)` 속도를 보장하며, 하루 1회 기록 규칙을 자연스럽게 강제하여 중복 작성을 원천 방지함.
-  - *단점*: 하루에 다건의 세부 로그를 기록하는 시나리오로 확장 시 서브컬렉션 분리나 타임스탬프 결합 복합 키 설계가 요구됨.
+- **문서 ID 전략(YYYY-MM-DD)의 장단점 및 조회 패턴 최적화**:
+  - *장점*: 날짜 기반 단건 조회 시 `db.collection('execution_logs').document('YYYY-MM-DD')`를 통해 복잡한 인덱스 탐색 없이 **$O(1)$의 상수 시간 조회**를 보장합니다. 또한 일일 1회 기록 원칙을 DB 레벨에서 고유 식별자(Unique Key)로 강제하여, 배치 적재나 폼 중복 제출 시에도 데이터가 덮어씌워지므로 **중복 문서 생성을 원천 차단**합니다.
+  - *단점*: 하루에 다건의 세부 실행 내역을 분할 기록하는 기능으로 확장할 경우 단일 날짜 ID 구조를 유지하기 어려우며, 서브컬렉션 분리 또는 복합 키(`YYYY-MM-DD_HHMMSS`)로의 스키마 마이그레이션이 요구됩니다.
 - **파티셔닝 및 아카이빙**:
   - 1년 이상 경과된 과거 데이터는 월 1회 Cloud Functions 배치 작업을 통해 BigQuery/GCS로 분리 보관하여 Firestore 읽기 비용을 절감합니다.
 - **동시성 충돌 방지 및 기대 동작**:
@@ -533,7 +606,7 @@ backend/
 - **서비스 계정 키(`serviceAccountKey.json`) 보안**:
   - 로컬 환경에서는 `.gitignore`에 등록하여 Git 추적을 차단하고, 배포 환경에서는 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 주입하여 최소 권한(Least Privilege) 원칙을 준수합니다.
 - **CORS 환경별 화이트리스트 구성 (`main.py`)**:
-  - 프론트엔드 배포 출처(`https://execution-coach-25e5lk54b-mind-mate1.vercel.app`)와 백엔드 API 출처(`https://execution-coach.onrender.com`) 간 동일 출처 정책(SOP) 위반 차단을 방지하기 위해 백엔드에 FastAPI `CORSMiddleware`를 등록하고 환경 변수 `CORS_ORIGINS`로 엄격히 관리합니다[cite: 2]:
+  - 프론트엔드 배포 출처(`https://execution-coach-25e5lk54b-mind-mate1.vercel.app`)와 백엔드 API 출처(`https://execution-coach.onrender.com`) 간 동일 출처 정책(SOP) 위반 차단을 방지하기 위해 백엔드에 FastAPI `CORSMiddleware`를 등록하고 환경 변수 `CORS_ORIGINS`로 엄격히 관리합니다:
 ```python
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -568,7 +641,7 @@ app.add_middleware(
 - **API 버전 관리 정책**:
   - 통계 요약 구조 변경 시 하위 호환성을 위해 `/api/v1/data/summary`(단순 통계), `/api/v2/data/summary`(구간별 변동 계수 추가) 형태로 버저닝을 관리합니다.
 - **프론트엔드 상태 갱신 타이밍**:
-  - 사용자가 새 데이터를 등록하거나 수정한 직후, 프론트엔드는 비동기 체인을 통해 `fetchDataList()`(테이블)와 `fetchSummary()`(통계 카드 및 차트)를 즉각 순차 재호출하여 화면 상태를 최신화합니다[cite: 1].
+  - 사용자가 새 데이터를 등록하거나 수정한 직후, 프론트엔드는 비동기 체인을 통해 `fetchDataList()`(테이블)와 `fetchSummary()`(통계 카드 및 차트)를 즉각 순차 재호출하여 화면 상태를 최신화합니다.
 
 ### 6. 인스턴스 콜드스타트 완화 방안 (프론트엔드 UI/UX 구현)
 - **무료 인스턴스 슬립 해제 대응 로딩 배너 (`index.html`)**:
@@ -597,7 +670,7 @@ try {
 
 ---
 
-## 📸 11. 핵심 스크린샷 증빙 자료
+## 📸 12. 핵심 스크린샷 증빙 자료
 
 ### 1) [서비스 접속 검증] Vercel 프론트엔드 실접속 주소창 화면
 ![Vercel 실접속 주소창 화면](images/screenshot_browser_url_access.png)
@@ -661,9 +734,9 @@ try {
 
 ---
 
-## 🛠️ 12. 트러블슈팅 및 최종 결론
+## 🛠️ 13. 트러블슈팅 및 최종 결론
 
-### 12.1 주요 문제 해결 (Troubleshooting)
+### 13.1 주요 문제 해결 (Troubleshooting)
 1. **Firestore 컬렉션 키 불일치로 인한 데이터 누락 해결**:
    - **원인**: 시드 업로드 스크립트는 `execution_logs` 컬렉션에 적재했으나, 초기 백엔드 API가 `DATA_COLLECTION = "data"`를 참조하여 데이터 단절 발생 (`total: 1`만 조회됨).
    - **해결**: 백엔드 상수를 `execution_logs`로 통일하고 원격 저장소에 패치 커밋을 푸시하여 102건의 전체 데이터가 완전하게 병합 조회되도록 조치 완료.
@@ -674,5 +747,5 @@ try {
    - **원인**: 윈도우 기본 파이썬 별칭 간섭 및 가상환경 비활성화 상태에서 스크립트 실행으로 인한 `ModuleNotFoundError: firebase_admin` 발생.
    - **해결**: 파이썬 가상환경(`venv`)을 명시적으로 활성화하고 패키지를 일괄 설치하여 시드 적재 스크립트 정상 실행 완료.
 
-### 12.2 최종 결론
+### 13.2 최종 결론
 본 프로젝트는 정량적 시계열 데이터 가공 파이프라인(Pandas)과 최신 LLM 도구 호출(Function Calling) 기술을 결합하여 실질적인 행동 교정을 이끌어내는 완성형 풀스택 코칭 플랫폼을 성공적으로 구축하였습니다. 클라우드 DB(Firestore), 백엔드(Render), 프론트엔드(Vercel) 간 안정적인 파이프라인과 운영 방어 설계를 완비하여 모든 평가 기준을 충족하였습니다.
