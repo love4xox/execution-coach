@@ -60,7 +60,7 @@
 - **대화형 API 문서 (Swagger UI)**: https://execution-coach.onrender.com/docs
   - *자동화 테스트 응답 검증*: `curl -I https://execution-coach.onrender.com/docs` 실행 시 `HTTP/2 200 OK` 반환
 - **OpenAPI 표준 스펙 (GPT Actions / MCP 호환)**: https://execution-coach.onrender.com/openapi.json
-- **클라우드 데이터베이스 콘솔 (Firebase Console)**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach-d8d9f/overview)
+- **클라우드 데이터베이스 콘솔 (Firebase Console)**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach/firestore)
   - *데이터베이스 관리*: Cloud Firestore (`execution_logs`, `conversations`) 실시간 데이터 적재 현황 모니터링 대시보드
 
 ---
@@ -128,12 +128,12 @@
 | `PORT` | 백엔드 서버 구동 포트 | `10000` (Render 기본값) |
 
 > 🔒 **보안 및 환경 변수 방어 정책**: 
-> 1. **서비스 계정 키 보안**: 로컬 환경의 `serviceAccountKey.json`은 `.gitignore`에 등록하여 Git 추적을 원천 차단했습니다. Render 배포 환경에서는 파일 자체 대신 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 Base64로 인코딩하여 주입하며, GCP 콘솔에서 Cloud Datastore 사용자 권한만 부여하여 **최소 권한의 원칙(Least Privilege)**을 준수합니다.
+> 1. **서비스 계정 키 보안**: 로컬 환경의 `serviceAccountKey.json`은 `.gitignore`에 등록하여 Git 추적을 원천 차단했습니다. Render 배포 환경에서는 파일 자체 대신 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 Base64로 인코딩하여 주입하며, GCP 콘솔에서 Cloud Datastore 사용자 권한만 부여하여 **최소 권한의 원칙 (Least Privilege)**을 준수합니다.
 > 2. **필수 환경변수 누락 방어**: 백엔드 기동 시 필수 변수(`OPENAI_API_KEY`, `FIREBASE_CREDENTIALS_PATH`) 누락이 감지되면 모호한 런타임 오류 대신 `[CRITICAL CONFIG ERROR] 필수 환경변수 누락으로 서버를 중단합니다.`라는 명확한 콘솔 로그를 출력하고 `sys.exit(1)`로 프로세스를 안전 종료합니다.
 > 3. **다중 환경 CORS 권장 설정**:
->    - *로컬 개발(Local)*: `http://localhost:8000,http://127.0.0.1:5500`
->    - *스테이징(Staging)*: `https://staging-execution-coach.vercel.app`
->    - *프로덕션(Production)*: `https://execution-coach-25e5lk54b-mind-mate1.vercel.app`
+>    - 로컬 개발 (Local): `http://localhost:8000,http://127.0.0.1:5500`
+>    - 스테이징 (Staging): `https://staging-execution-coach.vercel.app`
+>    - 프로덕션 (Production): `https://execution-coach-25e5lk54b-mind-mate1.vercel.app`
 
 ### 5.2 로컬 설치 및 Uvicorn 실행 명령어 코드
 ```bash
@@ -141,22 +141,22 @@
 git clone [https://github.com/love4xox/execution-coach.git](https://github.com/love4xox/execution-coach.git)
 cd execution-coach
 
-# 1. 파이썬 가상환경 생성
+# 2. 파이썬 가상환경 생성
 python -m venv venv
 
-# 2. 가상환경 활성화 (Windows PowerShell 기준)
+# 3. 가상환경 활성화 (Windows PowerShell 기준)
 .\venv\Scripts\activate
 # (만약 권한 에러가 나면 Set-ExecutionPolicy Unrestricted -Scope Process 실행 후 재시도)
 # Mac / Linux 가상환경 활성화: source venv/bin/activate
 
-# 3. 필수 패키지 일괄 설치
+# 4. 필수 패키지 일괄 설치
 pip install -r requirements.txt
 
-# 4. 100일 시계열 데이터 생성 및 업로드
+# 5. 100일 시계열 데이터 생성 및 업로드
 python generate_seed.py
 python upload_seed.py
 
-# 5. Uvicorn 로컬 개발 서버 구동 (코드 변경 시 자동 재로드: --reload)
+# 6. Uvicorn 로컬 개발 서버 구동 (코드 변경 시 자동 재로드: --reload)
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 # [참고] Render 클라우드 프로덕션 배포 시 Uvicorn 구동 명령어
@@ -444,7 +444,7 @@ if __name__ == "__main__":
 
 ## 🗄️ 8. 데이터베이스 아키텍처 및 적재 무결성 검증 (Firestore)
 
-- **Firebase 콘솔 바로가기**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach-d8d9f/overview)
+- **Firebase 콘솔 바로가기**: [execution-coach - Firebase Console](https://console.firebase.google.com/project/execution-coach/firestore)
 
 ### 8.1 Firebase Cloud Firestore 콘솔 적재 스냅샷
 
@@ -477,7 +477,7 @@ if __name__ == "__main__":
 #### 3) 문서 ID 전략 (Document ID: `YYYY-MM-DD`) 및 조회 패턴 최적화
 - **상수 시간 $O(1)$ 단건 조회 보장**:
   - Auto-generated ID(임의의 해시 문자열) 대신 일자 포맷(`YYYY-MM-DD`)을 고유 Document ID로 지정했습니다.
-  - 클라이언트가 특정 날짜의 기록을 조회하거나 수정할 때(`GET/PUT /api/data/2026-06-10`), 복잡한 복합 인덱스 스캔이나 `where("date", "==", ...)` 필터링 없이 `db.collection('execution_logs').document('YYYY-MM-DD')` 경로 지정을 통해 **$O(1)$의 즉각적인 단건 접근(Point Read)**이 가능합니다.
+  - 클라이언트가 특정 날짜의 기록을 조회하거나 수정할 때(`GET/PUT /api/data/2026-06-10`), 복잡한 복합 인덱스 스캔이나 `where("date", "==", ...)` 필터링 없이 `db.collection('execution_logs').document('YYYY-MM-DD')` 경로 지정을 통해 **$O(1)$의 즉각적인 단건 접근 (Point Read)**이 가능합니다.
 - **DB 레벨의 중복 등록 원천 차단 (Unique Key 강제)**:
   - '하루에 한 번만 실행 점수를 기록한다'는 비즈니스 룰을 애플리케이션 코드가 아닌 NoSQL의 Document ID 레벨에서 물리적으로 강제합니다.
   - 동일 날짜에 대한 중복 제출이나 배치 업로드 재실행 시에도 새로운 문서가 중복 생성되지 않고 기존 일자 문서에 원자적으로 덮어씌워지므로(Idempotency), 데이터 왜곡을 사전에 방지합니다.
@@ -500,8 +500,8 @@ if __name__ == "__main__":
   | `created_at` / `updated_at` | `string` | ISO 8601 생성 및 갱신 UTC 타임스탬프 | `"2026-09-22T02:09:14.755639"` |
   | `messages` | `array[map]` | `role` (`user`/`assistant`), `content`, `timestamp` 배열 구조 | `[ { role: "user", ... }, { role: "assistant", ... } ]` |
 
-#### 5) 배치 트랜잭션(Batch Write)을 통한 대량 적재 무결성
-- 단건 호출 방식 대신 Firebase Admin SDK의 `db.batch()`를 적용하여 100일간의 시드 데이터를 **단일 원자적 커밋(Atomic Commit)**으로 Firestore에 일괄 적재했습니다.
+#### 5) 배치 트랜잭션 (Batch Write)을 통한 대량 적재 무결성
+- 단건 호출 방식 대신 Firebase Admin SDK의 `db.batch()`를 적용하여 100일간의 시드 데이터를 **단일 원자적 커밋 (Atomic Commit)**으로 Firestore에 일괄 적재했습니다.
 - 이를 통해 네트워크 지연(Latency)을 최소화하고, 적재 도중 네트워크 끊김이나 예외가 발생하더라도 부분 적재로 인한 데이터 결손이 발생하지 않도록 트랜잭션 무결성을 완벽하게 보장했습니다.
 
 #### 6) 트러블슈팅 분석: 초기 `data` 컬렉션 단건 격리 이슈 해결
@@ -560,11 +560,11 @@ curl -X POST "[https://execution-coach.onrender.com/api/chat/function-call](http
        │<── 6. 200 OK (tool_called +  │                              │
        │       coaching_feedback) ────│                              │
 ```
-3. **멀티채널(GPT Actions) 지원**: FastAPI 자동 생성 스펙(`/openapi.json`)을 기반으로 Custom GPTs 및 외부 MCP 클라이언트와 완벽 호환.
+3. **멀티채널 (GPT Actions) 지원**: FastAPI 자동 생성 스펙(`/openapi.json`)을 기반으로 Custom GPTs 및 외부 MCP 클라이언트와 완벽 호환.
 
 ### [보너스 2] 인사이트·UX 고도화 및 모바일 제약 대응
 - **시계열 차트 시각화**: Chart.js를 연동하여 최근 14일간의 점수 변동 추이를 스무스 라인 차트로 시각화.
-- **보너스 UX 편의 기능**: 원클릭 CSV 데이터 내보내기 기능 및 사용자 시각 보호를 위한 다크 모드(Dark Mode) 지원.
+- **보너스 UX 편의 기능**: 원클릭 CSV 데이터 내보내기 기능 및 사용자 시각 보호를 위한 다크 모드 (Dark Mode) 지원.
 - **모바일 제약 사항 및 폴백 동작 안내**: 모바일 환경(폭 768px 이하)에서는 차트 핀치 줌(확대) 시 레이아웃 뭉침 방지를 위해 제스처 줌을 비활성화하고, 가로 스크롤 테이블 형태의 폴백 뷰를 제공하여 데이터 가독성을 보장합니다.
 
 ---
@@ -592,18 +592,18 @@ backend/
 ```
 
 ### 2. 데이터베이스 확장 및 동시성 제어 전략
-- **문서 ID 전략(YYYY-MM-DD)의 장단점 및 조회 패턴 최적화**:
+- **문서 ID 전략 (YYYY-MM-DD)의 장단점 및 조회 패턴 최적화**:
   - *장점*: 날짜 기반 단건 조회 시 `db.collection('execution_logs').document('YYYY-MM-DD')`를 통해 복잡한 인덱스 탐색 없이 **$O(1)$의 상수 시간 조회**를 보장합니다. 또한 일일 1회 기록 원칙을 DB 레벨에서 고유 식별자(Unique Key)로 강제하여, 배치 적재나 폼 중복 제출 시에도 데이터가 덮어씌워지므로 **중복 문서 생성을 원천 차단**합니다.
   - *단점*: 하루에 다건의 세부 실행 내역을 분할 기록하는 기능으로 확장할 경우 단일 날짜 ID 구조를 유지하기 어려우며, 서브컬렉션 분리 또는 복합 키(`YYYY-MM-DD_HHMMSS`)로의 스키마 마이그레이션이 요구됩니다.
 - **파티셔닝 및 아카이빙**:
   - 1년 이상 경과된 과거 데이터는 월 1회 Cloud Functions 배치 작업을 통해 BigQuery/GCS로 분리 보관하여 Firestore 읽기 비용을 절감합니다.
 - **동시성 충돌 방지 및 기대 동작**:
-  - 동일 세션 또는 동일 일자 로그 동시 수정 충돌 시, Firestore의 기본 정책인 **Last-Write-Wins(최종 커밋 우선)** 방식을 따르며, 대화 히스토리 업데이트 시에는 `transaction.update`를 적용하여 메시지 유실을 방지합니다.
+  - 동일 세션 또는 동일 일자 로그 동시 수정 충돌 시, Firestore의 기본 정책인 **Last-Write-Wins (최종 커밋 우선)** 방식을 따르며, 대화 히스토리 업데이트 시에는 `transaction.update`를 적용하여 메시지 유실을 방지합니다.
 
 ### 3. 예외 처리, 모니터링 및 보안 정책 (CORS 및 입력 방어)
 - **Pydantic 422 검증 오류 처리**:
   - 클라이언트에서 제약 조건 위반 시 `422 Unprocessable Entity`를 반환하며, 프론트엔드는 응답의 `loc` 및 `msg`를 파싱해 폼 하단에 인라인 경고 문구로 즉각 렌더링합니다.
-- **서비스 계정 키(`serviceAccountKey.json`) 보안**:
+- **서비스 계정 키 (`serviceAccountKey.json`) 보안**:
   - 로컬 환경에서는 `.gitignore`에 등록하여 Git 추적을 차단하고, 배포 환경에서는 `FIREBASE_CREDENTIALS_JSON` 환경 변수(Secret)에 주입하여 최소 권한(Least Privilege) 원칙을 준수합니다.
 - **CORS 환경별 화이트리스트 구성 (`main.py`)**:
   - 프론트엔드 배포 출처(`https://execution-coach-25e5lk54b-mind-mate1.vercel.app`)와 백엔드 API 출처(`https://execution-coach.onrender.com`) 간 동일 출처 정책(SOP) 위반 차단을 방지하기 위해 백엔드에 FastAPI `CORSMiddleware`를 등록하고 환경 변수 `CORS_ORIGINS`로 엄격히 관리합니다:
@@ -625,10 +625,10 @@ app.add_middleware(
 
 ### 4. LLM 비용 최적화 및 신뢰성 정책
 - **정량적 최적화 및 전달 방식 비교 (누적 100일 시계열 데이터 기준)**:
-  1. **전체 로우(Raw) 데이터를 그대로 전달할 때 (비효율적 방식)**:
+  1. **전체 로우 (Raw) 데이터를 그대로 전달할 때 (비효율적 방식)**:
      - **방식**: Firestore에 누적된 100일 치(102개 기록)의 날짜, 점수, 회고 메모 전체를 매 질문마다 프롬프트에 그대로 복사하여 주입.
      - **문제점**: 1회 질의당 약 **4,500 - 6,000 토큰**이 소모되어 API 비용이 급증하고, 평균 응답 대기시간(Latency)이 **약 3.2초**까지 길어짐.
-  2. **사전 요약(Summary) + 최근 7일 상세 기록만 주입할 때 (본 프로젝트 적용 방식)**:
+  2. **사전 요약 (Summary) + 최근 7일 상세 기록만 주입할 때 (본 프로젝트 적용 방식)**:
      - **방식**: 백엔드에서 Pandas로 전체 데이터를 사전 가공하여 "전체 평균 67.0점, 최근 추세 하강세" 형태의 핵심 지표 1장과, 최근 7일치 상세 기록만 선별 주입.
      - **최적화 성과**: 1회 질의당 약 **650 - 800 토큰** 수준으로 줄여 **토큰 비용 약 85% 절감**, 평균 Latency를 **약 1.1초**로 단축.
 - **컨텍스트 누락 위험 사례 및 대응책**:
@@ -664,7 +664,7 @@ try {
   if (banner) banner.style.display = "none";
 }
 ```
-- **주기적 프리워밍(Pre-warming) 권장 설정**:
+- **주기적 프리워밍 (Pre-warming) 권장 설정**:
   - 외부 UptimeRobot 또는 Cron-job.org를 연동하여 10분 주기로 `/docs` 엔드포인트를 핑(Ping) 호출하여 슬립을 사전에 예방할 수 있습니다:
   - *Cron 설정 예시*: `*/10 * * * * curl -s https://execution-coach.onrender.com/docs > /dev/null`
 
